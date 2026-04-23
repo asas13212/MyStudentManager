@@ -214,3 +214,18 @@
   - 新增基于 `user.dir` 的兜底路径搜索，兼容 IDEA 从工作区根目录启动的情况。
 - 目的：避免仅因工作目录不同导致 `ncu.png` 找不到、界面不显示。
 
+---
+
+## 2026-04-23
+
+### 主题 17：GitHub 发布前目录整理与忽略规则优化
+**用户原话**：
+> 我要把本地的代码传入github上了，但是i有一些需要忽略，请你优化文件结构，比如创建文件夹存放png 文件，同时按照github的规范，把不需要的文件gitignore
+
+**处理结果**：
+- 新增文档图片目录 `docs/images/`，并将根目录散落的 `img.png` 移动到 `docs/images/img.png`，避免仓库根目录堆放资源文件。
+- 保留运行时资源目录 `resources/Image/`（`deepin.png`、`ncu.png`），确保 JavaFX 图标加载逻辑不受影响。
+- 清理本地临时启动输出文件：`startup-out.txt`、`startup-err.txt`。
+- 优化 `.gitignore`，新增常见本地临时文件/崩溃日志/环境文件忽略规则（如 `startup-*.txt`、`hs_err_pid*`、`.env*` 等），更符合 GitHub Java 项目发布习惯。
+- 更新 `README.md` 的仓库结构说明，明确 `DevNotes.md` 为根目录主记录，并加入 `docs/images/`。
+

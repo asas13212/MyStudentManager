@@ -19,6 +19,7 @@ StudentManage/
 ├─ build.ps1                  # 一键编译 / 运行脚本
 ├─ README.md                  # 项目说明
 ├─ .gitignore                 # Git 忽略规则
+├─ DevNotes.md                # 聊天记录 / 开发日志（主记录）
 ├─ src/                       # Java 源码
 │  ├─ module-info.java
 │  └─ studentmanage/
@@ -33,7 +34,8 @@ StudentManage/
 │     ├─ deepin.png
 │     └─ ncu.png
 └─ docs/                      # 说明与历史资料
-   ├─ DevNotes.md
+   ├─ images/
+   │  └─ img.png
    ├─ DevNotes.txt
    └─ archive/
       └─ MainApp.java.bak
