@@ -9,6 +9,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -17,6 +18,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.Separator;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.ScrollPane;
@@ -40,6 +42,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -67,6 +70,14 @@ public class MainApp extends Application {
     private static StudentService bootstrapService;
     private static final String PREF_NODE = "student-manage";
     private static final String PREF_LAST_SAVED_FILE = "lastSavedFile";
+    private static final String TEACHER_USERNAME = "cyt";
+    private static final String PREF_TEACHER_PASSWORD = "teacherPassword";
+    private static final String DEFAULT_TEACHER_PASSWORD = "cyt070208";
+
+    private enum AccessRole {
+        STUDENT,
+        TEACHER
+    }
 
     private StudentService service;
     private MenuController controller;
@@ -115,6 +126,12 @@ public class MainApp extends Application {
     private final Map<String, Map<String, String>> importExtraValuesByStudentId = new HashMap<>();
     private final LinkedHashSet<String> dynamicExtraColumns = new LinkedHashSet<>();
     private boolean hasUnsavedChanges;
+    private AccessRole currentRole = AccessRole.STUDENT;
+    private MenuItem rowDeleteMenuItem;
+    private Button quickAddButton;
+    private Button clearButton;
+    private Button importButton;
+    private TitledPane importPane;
 
     public static void launchApp(StudentService service, String[] args) {
         bootstrapService = service;
@@ -145,6 +162,19 @@ public class MainApp extends Application {
         stage.show();
     }
 
+    private String getTeacherPassword() {
+        String saved = preferences.get(PREF_TEACHER_PASSWORD, DEFAULT_TEACHER_PASSWORD);
+        return isBlank(saved) ? DEFAULT_TEACHER_PASSWORD : saved.trim();
+    }
+
+    private boolean isTeacherCredentialsValid(String username, String password) {
+        return TEACHER_USERNAME.equals(username) && getTeacherPassword().equals(password);
+    }
+
+    private void updateTeacherPassword(String newPassword) {
+        preferences.put(PREF_TEACHER_PASSWORD, newPassword);
+    }
+
     private Scene buildMainScene() {
         BorderPane root = new BorderPane();
         root.setCenter(buildScrollableCenter());
@@ -168,23 +198,57 @@ public class MainApp extends Application {
             background.setImage(new Image(backgroundPath, true));
         }
 
+        ImageView avatar = new ImageView();
+        avatar.getStyleClass().add("launch-avatar");
+        avatar.setFitWidth(120);
+        avatar.setFitHeight(120);
+        avatar.setPreserveRatio(false);
+        avatar.setSmooth(true);
+        avatar.setMouseTransparent(true);
+        String avatarPath = resolveImagePath("ncu.png");
+        if (avatarPath != null) {
+            avatar.setImage(new Image(avatarPath, true));
+        }
+        Circle clip = new Circle(60, 60, 60);
+        avatar.setClip(clip);
+
         Label title = new Label("学生管理系统");
         title.getStyleClass().add("launch-title");
         title.setStyle("-fx-font-family: 'SimSun', '宋体';");
 
-        Label hint = new Label("欢迎进入学生管理系统，后续可无缝扩展老师端与学生端。\n当前预留为统一入口页面。");
+        Label hint = new Label("请选择进入身份：学生端可查看与导入导出，老师端需验证后进入。\n后续可继续扩展老师端与学生端。");
         hint.getStyleClass().add("launch-hint");
         hint.setWrapText(true);
 
-        Button enterButton = new Button("点我进入");
-        enterButton.getStyleClass().addAll("button-primary", "launch-enter-button");
-        enterButton.setOnAction(e -> {
+        Button studentButton = new Button("学生端");
+        studentButton.getStyleClass().addAll("button-secondary", "launch-enter-button", "launch-student-button");
+        studentButton.setMaxWidth(Double.MAX_VALUE);
+        studentButton.setOnAction(e -> {
             if (enterAction != null) {
+                currentRole = AccessRole.STUDENT;
                 enterAction.run();
             }
         });
 
-        VBox card = new VBox(16, title, hint, enterButton);
+        Button teacherButton = new Button("老师端");
+        teacherButton.getStyleClass().addAll("button-primary", "launch-enter-button", "launch-teacher-button");
+        teacherButton.setMaxWidth(Double.MAX_VALUE);
+        teacherButton.setOnAction(e -> {
+            if (showTeacherLoginDialog()) {
+                currentRole = AccessRole.TEACHER;
+                if (enterAction != null) {
+                    enterAction.run();
+                }
+            }
+        });
+
+        HBox buttonRow = new HBox(12, studentButton, teacherButton);
+        buttonRow.setAlignment(Pos.CENTER);
+        buttonRow.setFillHeight(true);
+        HBox.setHgrow(studentButton, Priority.ALWAYS);
+        HBox.setHgrow(teacherButton, Priority.ALWAYS);
+
+        VBox card = new VBox(16, avatar, title, hint, buttonRow);
         card.getStyleClass().add("launch-card");
         card.setAlignment(Pos.CENTER);
         card.setMaxWidth(480);
@@ -201,13 +265,157 @@ public class MainApp extends Application {
     }
 
     private void enterMainInterface(Stage stage, Scene mainScene) {
-        stage.setTitle("学生信息管理系统");
+        stage.setTitle(currentRole == AccessRole.TEACHER ? "学生信息管理系统（老师端）" : "学生信息管理系统（学生端）");
         stage.setScene(mainScene);
         stage.centerOnScreen();
+        applyRolePermissions();
         Platform.runLater(() -> {
             idField.requestFocus();
             tryAutoLoadLastSavedFile();
         });
+    }
+
+    private boolean showTeacherLoginDialog() {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("老师端身份验证");
+        dialog.setHeaderText("请输入管理员账号与密码后进入老师端");
+        dialog.getDialogPane().getStyleClass().add("teacher-login-dialog");
+        dialog.getDialogPane().setPrefWidth(460);
+
+        TextField usernameField = new TextField(TEACHER_USERNAME);
+        usernameField.setPromptText("管理员账号");
+        usernameField.setPrefWidth(280);
+
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("请输入密码");
+        passwordField.setPrefWidth(280);
+
+        GridPane pane = new GridPane();
+        pane.setHgap(10);
+        pane.setVgap(12);
+        pane.setPadding(new Insets(14, 8, 4, 8));
+        pane.setAlignment(Pos.CENTER_LEFT);
+        pane.add(new Label("管理员："), 0, 0);
+        pane.add(usernameField, 1, 0);
+        pane.add(new Label("密码："), 0, 1);
+        pane.add(passwordField, 1, 1);
+
+        dialog.getDialogPane().setContent(pane);
+        ButtonType loginType = new ButtonType("登录", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+        ButtonType changePasswordType = new ButtonType("修改密码", javafx.scene.control.ButtonBar.ButtonData.OTHER);
+        ButtonType cancelType = ButtonType.CANCEL;
+        dialog.getDialogPane().getButtonTypes().addAll(loginType, changePasswordType, cancelType);
+
+        Button loginButton = (Button) dialog.getDialogPane().lookupButton(loginType);
+        loginButton.getStyleClass().add("button-primary");
+        loginButton.setDefaultButton(true);
+        loginButton.setPrefWidth(120);
+
+        Button changePasswordButton = (Button) dialog.getDialogPane().lookupButton(changePasswordType);
+        changePasswordButton.getStyleClass().add("button-secondary");
+        changePasswordButton.setPrefWidth(120);
+
+        Button cancelButton = (Button) dialog.getDialogPane().lookupButton(cancelType);
+        cancelButton.setPrefWidth(120);
+
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isPresent() && result.get() == changePasswordType) {
+            showTeacherPasswordChangeDialog();
+            return false;
+        }
+        if (result.isEmpty() || result.get() != loginType) {
+            return false;
+        }
+
+        String username = mustNotBlank(usernameField.getText(), "管理员账号不能为空。");
+        String password = mustNotBlank(passwordField.getText(), "密码不能为空。");
+        if (!isTeacherCredentialsValid(username, password)) {
+            showError("登录失败", "管理员账号或密码错误。");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean showTeacherPasswordChangeDialog() {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("修改管理员密码");
+        dialog.setHeaderText("请先验证原密码，再设置新密码");
+        dialog.getDialogPane().getStyleClass().add("teacher-login-dialog");
+        dialog.getDialogPane().setPrefWidth(500);
+
+        TextField usernameField = new TextField(TEACHER_USERNAME);
+        usernameField.setPromptText("管理员账号");
+        usernameField.setPrefWidth(300);
+
+        PasswordField oldPasswordField = new PasswordField();
+        oldPasswordField.setPromptText("原密码");
+        oldPasswordField.setPrefWidth(300);
+
+        PasswordField newPasswordField = new PasswordField();
+        newPasswordField.setPromptText("新密码");
+        newPasswordField.setPrefWidth(300);
+
+        PasswordField confirmPasswordField = new PasswordField();
+        confirmPasswordField.setPromptText("再次输入新密码");
+        confirmPasswordField.setPrefWidth(300);
+
+        GridPane pane = new GridPane();
+        pane.setHgap(10);
+        pane.setVgap(12);
+        pane.setPadding(new Insets(14, 8, 4, 8));
+        pane.setAlignment(Pos.CENTER_LEFT);
+        pane.add(new Label("管理员："), 0, 0);
+        pane.add(usernameField, 1, 0);
+        pane.add(new Label("原密码："), 0, 1);
+        pane.add(oldPasswordField, 1, 1);
+        pane.add(new Label("新密码："), 0, 2);
+        pane.add(newPasswordField, 1, 2);
+        pane.add(new Label("确认密码："), 0, 3);
+        pane.add(confirmPasswordField, 1, 3);
+
+        dialog.getDialogPane().setContent(pane);
+        ButtonType saveType = new ButtonType("保存新密码", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelType = ButtonType.CANCEL;
+        dialog.getDialogPane().getButtonTypes().addAll(saveType, cancelType);
+
+        Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveType);
+        saveButton.getStyleClass().add("button-primary");
+        saveButton.setDefaultButton(true);
+        saveButton.setPrefWidth(130);
+
+        Button cancelButton = (Button) dialog.getDialogPane().lookupButton(cancelType);
+        cancelButton.setPrefWidth(130);
+
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isEmpty() || result.get() != saveType) {
+            return false;
+        }
+
+        String username = mustNotBlank(usernameField.getText(), "管理员账号不能为空。");
+        String oldPassword = mustNotBlank(oldPasswordField.getText(), "原密码不能为空。");
+        String newPassword = mustNotBlank(newPasswordField.getText(), "新密码不能为空。");
+        String confirmPassword = mustNotBlank(confirmPasswordField.getText(), "确认密码不能为空。");
+
+        if (!TEACHER_USERNAME.equals(username)) {
+            showError("修改失败", "管理员账号不正确。");
+            return false;
+        }
+        if (!getTeacherPassword().equals(oldPassword)) {
+            showError("修改失败", "原密码不正确。");
+            return false;
+        }
+        if (!newPassword.equals(confirmPassword)) {
+            showError("修改失败", "两次输入的新密码不一致。");
+            return false;
+        }
+        if (newPassword.equals(oldPassword)) {
+            showError("修改失败", "新密码不能与原密码相同。");
+            return false;
+        }
+
+        updateTeacherPassword(newPassword);
+        showInfo("修改成功", "管理员密码已更新，请使用新密码重新登录。\n\n注意：本次修改已保存到本机配置中。");
+        return true;
     }
 
     private VBox buildHeader() {
@@ -216,11 +424,19 @@ public class MainApp extends Application {
         quickSaveExitButton.setManaged(false);
         quickSaveExitButton.setOnAction(e -> saveAndExit());
 
+        Button studentEntryButton = new Button("学生端入口");
+        studentEntryButton.getStyleClass().add("button-secondary");
+        studentEntryButton.setOnAction(e -> switchToStudentMode());
+
+        Button teacherEntryButton = new Button("老师端入口");
+        teacherEntryButton.getStyleClass().add("button-primary");
+        teacherEntryButton.setOnAction(e -> switchToTeacherMode());
+
         Region leftSpacer = new Region();
         Region rightSpacer = new Region();
         ImageView headerLogo = buildHeaderLogo();
         HBox.setHgrow(rightSpacer, Priority.ALWAYS);
-        HBox actionsRow = new HBox(8, quickSaveExitButton, leftSpacer, rightSpacer, headerLogo);
+        HBox actionsRow = new HBox(8, quickSaveExitButton, studentEntryButton, teacherEntryButton, leftSpacer, rightSpacer, headerLogo);
         actionsRow.setAlignment(Pos.CENTER_LEFT);
         actionsRow.setMaxWidth(Double.MAX_VALUE);
 
@@ -257,6 +473,35 @@ public class MainApp extends Application {
         box.setAlignment(Pos.CENTER);
         box.setPadding(new Insets(14, 16, 12, 16));
         return box;
+    }
+
+    private void switchToStudentMode() {
+        currentRole = AccessRole.STUDENT;
+        applyRolePermissions();
+        updateRoleTitle();
+        setActionMessage("已切换为学生端：仅可查看与导入导出。", true);
+    }
+
+    private void switchToTeacherMode() {
+        if (!showTeacherLoginDialog()) {
+            return;
+        }
+        currentRole = AccessRole.TEACHER;
+        applyRolePermissions();
+        updateRoleTitle();
+        setActionMessage("已切换为老师端：可执行全部操作。", true);
+    }
+
+    private void updateRoleTitle() {
+        if (table.getScene() == null || table.getScene().getWindow() == null) {
+            return;
+        }
+        Stage stage = (Stage) table.getScene().getWindow();
+        if (stage != null) {
+            stage.setTitle(currentRole == AccessRole.TEACHER
+                    ? "学生信息管理系统（老师端）"
+                    : "学生信息管理系统（学生端）");
+        }
     }
 
     private ImageView buildHeaderLogo() {
@@ -369,14 +614,15 @@ public class MainApp extends Application {
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, selected) -> fillForm(selected));
         table.setRowFactory(tv -> {
             TableRow<Student> row = new TableRow<>();
-            MenuItem deleteItem = new MenuItem("删除该学生");
-            deleteItem.setOnAction(e -> {
+            rowDeleteMenuItem = new MenuItem("删除该学生");
+            rowDeleteMenuItem.setOnAction(e -> {
                 Student selected = row.getItem();
                 if (selected != null) {
                     deleteStudentById(selected.getStudentId());
                 }
             });
-            ContextMenu menu = new ContextMenu(deleteItem);
+            rowDeleteMenuItem.setDisable(currentRole != AccessRole.TEACHER);
+            ContextMenu menu = new ContextMenu(rowDeleteMenuItem);
             row.emptyProperty().addListener((obs, oldEmpty, empty) -> row.setContextMenu(empty ? null : menu));
             return row;
         });
@@ -714,12 +960,12 @@ public class MainApp extends Application {
 
         Label addHint = new Label("填写完成后优先点这里新增：");
         addHint.getStyleClass().add("hint-text");
-        Button quickAddButton = new Button("新增学生（主按钮）");
+        quickAddButton = new Button("新增学生（主按钮）");
         quickAddButton.setMaxWidth(Double.MAX_VALUE);
         quickAddButton.getStyleClass().add("button-primary");
         quickAddButton.setOnAction(e -> addStudent());
 
-        Button clearButton = new Button("清空表单");
+        clearButton = new Button("清空表单");
         clearButton.setMaxWidth(Double.MAX_VALUE);
         clearButton.getStyleClass().add("button-secondary");
         clearButton.setOnAction(e -> {
@@ -784,7 +1030,7 @@ public class MainApp extends Application {
         saveButton.getStyleClass().add("button-secondary");
         saveButton.setOnAction(e -> saveStudentsToFile(true));
 
-        Button importButton = new Button("导入文件");
+        importButton = new Button("导入文件");
         importButton.getStyleClass().add("button-secondary");
         importButton.setOnAction(e -> importStudentsFromFile());
 
@@ -793,7 +1039,7 @@ public class MainApp extends Application {
         VBox queryContent = new VBox(8, queryRow, queryButtons);
         VBox utilityContent = new VBox(8, browseButtons, sortRow1, sortRow2, new HBox(8, sortButton, avgButton, importButton, saveButton, aboutButton));
 
-        TitledPane importPane = new TitledPane("学生信息导入", importContent);
+        importPane = new TitledPane("学生信息导入", importContent);
         TitledPane queryPane = new TitledPane("查询功能", queryContent);
         TitledPane utilityPane = new TitledPane("浏览 / 排序 / 关于", utilityContent);
         importPane.setCollapsible(true);
@@ -820,7 +1066,39 @@ public class MainApp extends Application {
         VBox.setVgrow(rightScrollPane, Priority.ALWAYS);
 
         switchTypeFieldState(typeBox.getValue());
+        applyRolePermissions();
         return panel;
+    }
+
+    private void applyRolePermissions() {
+        boolean teacher = currentRole == AccessRole.TEACHER;
+
+        if (quickAddButton != null) {
+            quickAddButton.setDisable(!teacher);
+        }
+        if (clearButton != null) {
+            clearButton.setDisable(false);
+        }
+        if (importButton != null) {
+            importButton.setDisable(false);
+        }
+        if (rowDeleteMenuItem != null) {
+            rowDeleteMenuItem.setDisable(!teacher);
+        }
+
+        typeBox.setDisable(!teacher);
+        idField.setDisable(!teacher);
+        nameField.setDisable(!teacher);
+        ageField.setDisable(!teacher);
+        classField.setDisable(!teacher);
+        provinceField.setDisable(!teacher);
+        cityField.setDisable(!teacher);
+        streetField.setDisable(!teacher);
+        houseNoField.setDisable(!teacher);
+        majorField.setDisable(!teacher);
+        supervisorField.setDisable(!teacher);
+        directionField.setDisable(!teacher);
+        addSubjectRowButton.setDisable(!teacher);
     }
 
     private HBox buildStatusBar() {
@@ -1770,7 +2048,7 @@ public class MainApp extends Application {
         return score;
     }
 
-    private int resolveIdColumn(Map<String, Integer> index, List<List<String>> rows, int dataStartRow) {
+    private int resolveIdColumn(Map<String, Integer> index, List<String> headers, int dataStartRow) {
         Integer direct = findColumn(index, "学号", "考号", "准考证号", "学生ID", "studentid", "id");
         if (direct != null) {
             return direct;
