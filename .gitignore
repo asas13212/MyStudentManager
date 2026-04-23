@@ -1,0 +1,34 @@
+# Build output
+out/
+bin/
+target/
+
+# IDE metadata
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+.factorypath
+.apt_generated/
+.springBeans
+.sts4-cache/
+
+# Local caches / logs / temp files
+*.class
+*.log
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+
+# OS / tool leftovers
+.kotlin
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/

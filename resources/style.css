@@ -1,0 +1,307 @@
+/* 全局字体与背景 */
+.root {
+    -fx-font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+    -fx-font-size: 14px;
+    -fx-background-color: #f5f7fa;
+    -fx-text-fill: #1d2129;
+}
+
+.app-root {
+    -fx-background-color: #f5f7fa;
+}
+
+.main-scroll-pane,
+.right-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.main-scroll-pane > .viewport,
+.right-scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* 标题与引导 */
+.app-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+.app-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #4e5969;
+}
+
+.header-logo {
+    -fx-opacity: 0.95;
+}
+
+.guide-title,
+.section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #4e5969;
+}
+
+.guide-text,
+.hint-text,
+.status-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #86909c;
+}
+
+/* 卡片 */
+.card-pane {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 8px;
+    -fx-border-color: #e5e6eb;
+    -fx-border-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 8, 0, 0, 2);
+}
+
+/* 折叠块 */
+.accordion,
+.accordion .titled-pane {
+    -fx-background-color: transparent;
+}
+
+.titled-pane {
+    -fx-text-fill: #1d2129;
+}
+
+.titled-pane > .title {
+    -fx-background-color: #f0f2f5;
+    -fx-background-radius: 8px;
+    -fx-border-color: #e5e6eb;
+    -fx-border-radius: 8px;
+    -fx-padding: 10px 12px;
+}
+
+.titled-pane > .title > .text {
+    -fx-fill: #4e5969;
+    -fx-font-weight: bold;
+}
+
+.titled-pane > .content {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 0 0 8px 8px;
+    -fx-border-color: #e5e6eb;
+    -fx-border-radius: 0 0 8px 8px;
+    -fx-padding: 12px;
+}
+
+.titled-pane:expanded > .title {
+    -fx-background-color: #eef7ff;
+}
+
+.titled-pane:expanded > .title > .text {
+    -fx-fill: #1677ff;
+}
+
+/* 表格 */
+.student-table {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 8px;
+    -fx-border-color: #e5e6eb;
+    -fx-border-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 8, 0, 0, 2);
+}
+
+.student-table .column-header-background {
+    -fx-background-color: #f0f2f5;
+    -fx-background-radius: 8px 8px 0 0;
+}
+
+.student-table .column-header,
+.student-table .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #e5e6eb transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.student-table .column-header .label {
+    -fx-text-fill: #4e5969;
+    -fx-font-weight: bold;
+}
+
+.student-table .table-row-cell {
+    -fx-cell-size: 36px;
+    -fx-border-color: transparent transparent #f2f3f5 transparent;
+}
+
+.student-table .table-row-cell:hover {
+    -fx-background-color: #f7f8fa;
+}
+
+.student-table .table-row-cell:selected {
+    -fx-background-color: #e8f3ff;
+}
+
+.student-table .table-row-cell:selected .text {
+    -fx-fill: #1677ff;
+}
+
+.student-table .table-cell {
+    -fx-padding: 0 12px 0 12px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-text-fill: #1d2129;
+}
+
+.student-table .table-cell.score-low .text {
+    -fx-fill: #f53f3f;
+    -fx-font-weight: bold;
+}
+
+.student-table .table-row-cell:selected .table-cell.score-low .text {
+    -fx-fill: #f53f3f;
+}
+
+.student-table .placeholder .label {
+    -fx-text-fill: #86909c;
+}
+
+/* 输入框与下拉框 */
+.form-control,
+.text-field,
+.combo-box-base,
+.text-area {
+    -fx-background-color: white;
+    -fx-border-color: #dcdfe6;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 8px 12px;
+}
+
+.text-field,
+.combo-box-base,
+.text-area {
+    -fx-text-fill: #1d2129;
+}
+
+.text-field:focused,
+.combo-box-base:focused,
+.text-area:focused {
+    -fx-border-color: #409eff;
+    -fx-effect: dropshadow(gaussian, rgba(64,158,255,0.20), 4, 0, 0, 0);
+}
+
+.text-input::prompt-text,
+.text-area::prompt-text {
+    -fx-prompt-text-fill: #c9cdd4;
+}
+
+.score-area .content {
+    -fx-background-color: white;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+}
+
+/* 标签 */
+.form-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #1d2129;
+    -fx-alignment: CENTER_RIGHT;
+}
+
+/* 按钮 */
+.button {
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+    -fx-padding: 10px 20px;
+}
+
+.button-primary {
+    -fx-background-color: #00b42a;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.button-primary:hover {
+    -fx-background-color: #00a026;
+}
+
+.button-primary:pressed {
+    -fx-background-color: #008c22;
+}
+
+.quick-save-button {
+    -fx-font-size: 13px;
+    -fx-padding: 8px 14px;
+}
+
+.button-secondary {
+    -fx-background-color: #f2f3f5;
+    -fx-text-fill: #4e5969;
+}
+
+.button-secondary:hover {
+    -fx-background-color: #e5e6eb;
+}
+
+.button-secondary:pressed {
+    -fx-background-color: #d9dde3;
+}
+
+/* 状态栏 */
+.status-bar {
+    -fx-background-color: #f2f3f5;
+    -fx-border-color: #e5e6eb transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.status-success {
+    -fx-text-fill: #00b42a;
+}
+
+.status-error {
+    -fx-text-fill: #f53f3f;
+}
+
+/* 滚动条轻量化 */
+.scroll-bar:vertical,
+.scroll-bar:horizontal {
+    -fx-background-color: #eef0f3;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #b8c0cc;
+    -fx-background-radius: 999px;
+}
+
+.scroll-bar .track {
+    -fx-background-color: #eef0f3;
+}
+
+.scroll-bar:vertical {
+    -fx-pref-width: 12px;
+}
+
+.scroll-bar:horizontal {
+    -fx-pref-height: 12px;
+}
+
+.student-drop-zone {
+    -fx-background-color: transparent;
+}
+
+.drop-overlay {
+    -fx-alignment: center;
+    -fx-background-color: rgba(255, 255, 255, 0.62);
+    -fx-background-radius: 10px;
+    -fx-border-color: rgba(22, 119, 255, 0.45);
+    -fx-border-width: 1px;
+    -fx-border-radius: 10px;
+}
+
+.drop-overlay-title {
+    -fx-text-fill: #1677ff;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.drop-overlay-subtitle {
+    -fx-text-fill: #4e5969;
+    -fx-font-size: 13px;
+}
+
