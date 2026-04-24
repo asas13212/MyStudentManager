@@ -28,8 +28,9 @@ import javafx.scene.control.TitledPane;
 import javafx.scene.effect.BoxBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
@@ -74,6 +75,9 @@ public class MainApp extends Application {
     private final VBox guideBox = new VBox();
     private final Button quickSaveExitButton = new Button("保存并退出");
     private ScrollPane centerScrollPane;
+    private double listResizeStartY;
+    private double listResizeStartHeight;
+    private boolean listResizeDragging;
 
     private final ComboBox<StudentType> typeBox = new ComboBox<>();
     private final TextField idField = new TextField();
@@ -127,7 +131,7 @@ public class MainApp extends Application {
         updateStatus();
 
         Scene scene = new Scene(root, 1380, 760);
-        stage.setTitle("学生信息管理系统（JavaFX 全中文界面）");
+        stage.setTitle("学生信息管理系统");
         stage.setScene(scene);
         setWindowIcon(stage);
         String stylesheet = resolveStyleSheet();
@@ -158,7 +162,7 @@ public class MainApp extends Application {
         Label title = new Label("学生信息管理系统");
         title.getStyleClass().add("app-title");
 
-        Label subtitle = new Label("教学作业版 - JavaFX 可视化管理");
+        Label subtitle = new Label("教学作业版");
         subtitle.getStyleClass().add("app-subtitle");
 
         Label guideTitle = new Label("新手使用步骤：");
@@ -266,9 +270,12 @@ public class MainApp extends Application {
         SplitPane splitPane = buildCenterPanel();
         VBox content = new VBox(8, buildHeader(), splitPane);
         content.setPadding(new Insets(0, 0, 8, 0));
+        content.setFillWidth(true);
+        VBox.setVgrow(splitPane, Priority.ALWAYS);
 
         centerScrollPane = new ScrollPane(content);
         centerScrollPane.setFitToWidth(true);
+        centerScrollPane.setFitToHeight(true);
         centerScrollPane.setPannable(true);
         centerScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         centerScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
@@ -284,7 +291,7 @@ public class MainApp extends Application {
         splitPane.setDividerPositions(0.65);
         splitPane.setStyle("-fx-background-color: transparent;");
         SplitPane.setResizableWithParent(left, true);
-        SplitPane.setResizableWithParent(right, false);
+        SplitPane.setResizableWithParent(right, true);
         return splitPane;
     }
 
@@ -309,18 +316,6 @@ public class MainApp extends Application {
             return row;
         });
 
-        table.setOnScroll(event -> {
-            if (centerScrollPane != null) {
-                double delta = event.getDeltaY();
-                double height = centerScrollPane.getContent().getBoundsInLocal().getHeight() - centerScrollPane.getViewportBounds().getHeight();
-                if (height > 0) {
-                    double v = centerScrollPane.getVvalue();
-                    centerScrollPane.setVvalue(v - delta / height / 3.0);
-                    event.consume();
-                }
-            }
-        });
-
         Label tableTitle = new Label("数据列表（滚轮可上移主界面）");
         tableTitle.getStyleClass().add("section-title");
 
@@ -334,9 +329,18 @@ public class MainApp extends Application {
         VBox tableCard = new VBox(table);
         tableCard.getStyleClass().add("card-pane");
         tableCard.setPadding(new Insets(10));
-        VBox.setVgrow(tableCard, Priority.ALWAYS);
+        tableCard.setMinHeight(220);
+        tableCard.setPrefHeight(380);
+        tableCard.setMaxHeight(Double.MAX_VALUE);
+        VBox.setVgrow(tableCard, Priority.NEVER);
 
-        VBox listContent = new VBox(10, titleCard, tableCard);
+        Region resizeHandle = new Region();
+        resizeHandle.getStyleClass().add("list-resize-handle");
+
+        Region bottomSpacer = new Region();
+        VBox.setVgrow(bottomSpacer, Priority.ALWAYS);
+
+        VBox listContent = new VBox(10, titleCard, tableCard, resizeHandle, bottomSpacer);
         VBox.setVgrow(table, Priority.ALWAYS);
 
         Label dropHint = new Label("请拖动文件到这里");
@@ -351,8 +355,89 @@ public class MainApp extends Application {
 
         StackPane dropZone = new StackPane(listContent, dropOverlay);
         dropZone.getStyleClass().add("student-drop-zone");
+        dropZone.setMinHeight(0);
+        dropZone.addEventFilter(ScrollEvent.SCROLL, this::forwardScrollToMainPane);
+        installListResizeBehavior(resizeHandle, tableCard, dropZone, titleCard, bottomSpacer);
         bindDropImportEvents(dropZone, listContent, dropOverlay);
-        return new VBox(dropZone);
+        VBox wrapper = new VBox(dropZone);
+        wrapper.setMinHeight(0);
+        VBox.setVgrow(dropZone, Priority.ALWAYS);
+        return wrapper;
+    }
+
+    private void installListResizeBehavior(Region resizeHandle,
+                                           VBox tableCard,
+                                           StackPane dropZone,
+                                           VBox titleCard,
+                                           Region bottomSpacer) {
+        resizeHandle.addEventHandler(MouseEvent.MOUSE_PRESSED, event -> {
+            listResizeDragging = true;
+            listResizeStartY = event.getSceneY();
+            listResizeStartHeight = tableCard.getHeight() > 1 ? tableCard.getHeight() : tableCard.getPrefHeight();
+            addStyleClassIfMissing(resizeHandle, "list-resize-handle-active");
+            addStyleClassIfMissing(tableCard, "list-resize-target-active");
+            event.consume();
+        });
+
+        resizeHandle.addEventHandler(MouseEvent.MOUSE_DRAGGED, event -> {
+            if (!listResizeDragging) {
+                return;
+            }
+            double minHeight = 220;
+            double spacing = 10;
+            double maxWithSpacer = dropZone.getHeight() - titleCard.getHeight() - resizeHandle.getHeight() - spacing * 3;
+            double maxWithoutSpacer = dropZone.getHeight() - titleCard.getHeight() - resizeHandle.getHeight() - spacing * 2;
+            double maxHeight = Math.max(minHeight + 40, maxWithoutSpacer);
+            double targetHeight = listResizeStartHeight + (event.getSceneY() - listResizeStartY);
+            double nextHeight = Math.max(minHeight, Math.min(maxHeight, targetHeight));
+            boolean pinToBottom = nextHeight >= maxWithSpacer;
+            bottomSpacer.setManaged(!pinToBottom);
+            bottomSpacer.setVisible(!pinToBottom);
+            tableCard.setPrefHeight(nextHeight);
+            bottomSpacer.setMinHeight(0);
+            event.consume();
+        });
+
+        resizeHandle.addEventHandler(MouseEvent.MOUSE_RELEASED, event -> {
+            listResizeDragging = false;
+            resizeHandle.getStyleClass().remove("list-resize-handle-active");
+            tableCard.getStyleClass().remove("list-resize-target-active");
+            setActionMessage("已调整数据列表高度。", true);
+            event.consume();
+        });
+
+        resizeHandle.addEventHandler(MouseEvent.MOUSE_EXITED, event -> {
+            if (!listResizeDragging) {
+                resizeHandle.getStyleClass().remove("list-resize-handle-active");
+                tableCard.getStyleClass().remove("list-resize-target-active");
+            }
+        });
+    }
+
+    private void addStyleClassIfMissing(Region node, String styleClass) {
+        if (!node.getStyleClass().contains(styleClass)) {
+            node.getStyleClass().add(styleClass);
+        }
+    }
+
+    private void addStyleClassIfMissing(VBox node, String styleClass) {
+        if (!node.getStyleClass().contains(styleClass)) {
+            node.getStyleClass().add(styleClass);
+        }
+    }
+
+    private void forwardScrollToMainPane(ScrollEvent event) {
+        if (centerScrollPane == null || centerScrollPane.getContent() == null) {
+            return;
+        }
+        double height = centerScrollPane.getContent().getBoundsInLocal().getHeight() - centerScrollPane.getViewportBounds().getHeight();
+        if (height <= 0) {
+            return;
+        }
+        double current = centerScrollPane.getVvalue();
+        double next = current - event.getDeltaY() / height / 3.0;
+        centerScrollPane.setVvalue(Math.max(0.0, Math.min(1.0, next)));
+        event.consume();
     }
 
     private void bindDropImportEvents(StackPane dropZone, Node blurTarget, Node overlay) {

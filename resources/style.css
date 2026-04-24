@@ -285,6 +285,29 @@
     -fx-background-color: transparent;
 }
 
+.list-resize-handle {
+    -fx-min-height: 8px;
+    -fx-pref-height: 8px;
+    -fx-max-height: 8px;
+    -fx-border-color: #d0d7e2 transparent transparent transparent;
+    -fx-border-width: 2px 0 0 0;
+    -fx-background-color: transparent;
+    -fx-cursor: v-resize;
+}
+
+.list-resize-handle:hover,
+.list-resize-handle-active {
+    -fx-border-color: #409eff transparent transparent transparent;
+}
+
+.list-resize-handle-active {
+    -fx-effect: dropshadow(gaussian, rgba(64,158,255,0.25), 6, 0, 0, 0);
+}
+
+.card-pane.list-resize-target-active {
+    -fx-border-color: #409eff;
+}
+
 .drop-overlay {
     -fx-alignment: center;
     -fx-background-color: rgba(255, 255, 255, 0.62);
