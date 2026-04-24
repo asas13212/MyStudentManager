@@ -33,6 +33,15 @@ StudentManage/
 │  └─ Image/
 │     ├─ deepin.png
 │     └─ ncu.png
+├─ web/                       # 网站移植模块（欢迎页 + 侧边栏主业务页）
+│  ├─ index.html
+│  ├─ pages/
+│  │  └─ app.html
+│  ├─ assets/
+│  │  ├─ css/
+│  │  ├─ js/
+│  │  └─ images/
+│  └─ README.md
 └─ docs/                      # 说明与历史资料
    ├─ images/
    │  └─ img.png
@@ -94,3 +103,18 @@ java --module-path "$env:JAVAFX_HOME\lib;.\out\classes" --add-modules javafx.con
 - 分页浏览与组合查询
 - 登录与角色权限控制
 - 新学生类型扩展
+
+## Web 模块（网站移植版）
+
+- 入口页：`web/index.html`（欢迎页，点击按钮进入系统）
+- 主业务页：`web/pages/app.html`（侧边栏导航布局）
+- 图片目录：`web/assets/images/`（你后续上传网站图片到这里即可）
+
+本地预览（可选）：
+
+```powershell
+Set-Location "E:\Projects\StudentManage\web"
+npm install
+npm run start
+```
+

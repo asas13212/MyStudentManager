@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学生管理系统 - 主业务界面</title>
+  <link rel="stylesheet" href="../assets/css/base.css" />
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">LOGO</div>
+        <div>
+          <h2>StudentManage</h2>
+          <p>Web 移植版</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="主导航">
+        <button class="nav-item is-active" data-target="dashboardPanel" type="button">仪表盘</button>
+        <button class="nav-item" data-target="studentPanel" type="button">学生管理</button>
+        <button class="nav-item" data-target="queryPanel" type="button">查询与排序</button>
+        <button class="nav-item" data-target="importPanel" type="button">导入与导出</button>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <h1>学生信息管理系统</h1>
+        <p>欢迎回来，今天也来高效管理学生数据。</p>
+      </header>
+
+      <section id="dashboardPanel" class="panel is-visible">
+        <div class="cards">
+          <article class="stat-card">
+            <h3>本科生</h3>
+            <p id="ugCount">0</p>
+          </article>
+          <article class="stat-card">
+            <h3>研究生</h3>
+            <p id="pgCount">0</p>
+          </article>
+          <article class="stat-card">
+            <h3>总人数</h3>
+            <p id="totalCount">0</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="studentPanel" class="panel">
+        <div class="work-grid">
+          <article class="table-card">
+            <div class="card-header">
+              <h2>数据列表</h2>
+              <button class="btn btn-secondary" type="button">重置列表</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>学号</th>
+                    <th>姓名</th>
+                    <th>类型</th>
+                    <th>专业</th>
+                  </tr>
+                </thead>
+                <tbody id="studentTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="form-card">
+            <h2>学生表单</h2>
+            <form>
+              <label for="studentId">学号</label>
+              <input id="studentId" type="text" placeholder="例如：2026001" />
+
+              <label for="studentName">姓名</label>
+              <input id="studentName" type="text" placeholder="例如：张三" />
+
+              <label for="studentType">类型</label>
+              <select id="studentType">
+                <option>本科生</option>
+                <option>研究生</option>
+              </select>
+
+              <label for="major">专业</label>
+              <input id="major" type="text" placeholder="例如：软件工程" />
+
+              <div class="form-actions">
+                <button class="btn btn-primary" type="button">新增学生</button>
+                <button class="btn btn-secondary" type="reset">清空表单</button>
+              </div>
+            </form>
+          </article>
+        </div>
+      </section>
+
+      <section id="queryPanel" class="panel">
+        <article class="placeholder-card">
+          <h2>查询与排序</h2>
+          <p>这里预留为后续接入 Java 项目中的查询、排序能力。</p>
+        </article>
+      </section>
+
+      <section id="importPanel" class="panel">
+        <article class="placeholder-card">
+          <h2>导入与导出</h2>
+          <p>这里预留为后续接入 Excel 导入导出功能。</p>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="../assets/js/mock-data.js"></script>
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>
+

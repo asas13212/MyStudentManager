@@ -1,0 +1,64 @@
+:root {
+  --bg: #f5f7fa;
+  --card: #ffffff;
+  --primary: #00b42a;
+  --primary-hover: #00a026;
+  --primary-active: #008c22;
+  --secondary: #f2f3f5;
+  --text-main: #1d2129;
+  --text-sub: #4e5969;
+  --border: #e5e6eb;
+  --shadow: 0 8px 24px rgba(15, 35, 95, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text-main);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.btn {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-primary:active {
+  background: var(--primary-active);
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: var(--text-sub);
+}
+
+.btn-secondary:hover {
+  background: #e5e6eb;
+}
+
