@@ -303,3 +303,43 @@
 - 数据列表卡片补充 `setMaxHeight(Double.MAX_VALUE)`，确保拖拽时可以继续向下扩展。
 - 已执行构建验证：`build.ps1` 编译通过。
 
+---
+
+### 主题 23：清空表单联动清空列表 + 导入动态栏位
+**用户原话**：
+> 清除表单有问题，你需要把数据列表的学生全部去除，同时导入兼容性，你必须根据表单内容，生成数据列表内对应的栏位，栏位可以自由变动，不能死板
+
+**处理结果**：
+- 已新增清空链路：`StudentRepository.clearAll()`、`StudentService.clearAllStudents()`、`MenuController.clearAllStudents()`。
+- 右侧“清空表单”按钮已调整为“清空表单 + 清空全部学生数据列表”。
+- 清空后同步重置动态科目列、导入附加列、排名缓存，并刷新表格与统计信息。
+- 导入逻辑改为动态列模式：不再因“科目不一致”直接失败，而是按当前导入内容更新可展示栏位。
+- 新增导入附加栏位（班级排名/年级排名/校排名）动态展示，列表栏位可随数据自由变动。
+- 已执行构建验证：`build.ps1` 编译通过。
+
+---
+
+### 主题 24：清空数据增加二次确认弹窗
+**用户原话**：
+> 1
+
+**处理结果**：
+- 按用户选择的方案 1，在 `src/studentmanage/MainApp.java` 为“清空表单（会清空全部学生）”增加确认弹窗。
+- 新增 `confirmClearAllStudents()`，弹窗文案明确“无法撤销”，避免误点清空全部数据。
+- 点击取消时不改动数据，仅在状态栏提示“已取消清空操作”。
+- 点击确认后继续执行原有 `clearFormAndAllStudents()` 流程。
+- 已执行构建验证：`build.ps1` 编译通过。
+
+---
+
+### 主题 25：启动空指针修复（MainApp 直启兼容）
+**用户原话**：
+> Exception in Application start method ... Cannot invoke "studentmanage.StudentService.listAll()" because "this.service" is null
+
+**处理结果**：
+- 定位原因：`MainApp.start(...)` 中 `bootstrapService` 为空时，`service`/`controller` 也会为空，导致 `browseAllStudents()` 触发空指针。
+- 修复 `src/studentmanage/MainApp.java`：在 `start(...)` 开头增加兜底初始化。
+  - 若 `bootstrapService == null`，自动创建 `new StudentService(new StudentRepository(500))`。
+  - 兼容直接运行 `MainApp`（不经过 `Main.main(...)`）的场景。
+- 已执行构建验证：`build.ps1` 编译通过。
+

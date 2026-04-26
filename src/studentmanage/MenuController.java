@@ -73,6 +73,14 @@ public class MenuController {
         return OperationResult.ok("学生信息已删除。");
     }
 
+    public OperationResult clearAllStudents() {
+        if (service.isEmpty()) {
+            return OperationResult.fail("当前没有学生数据可清空。");
+        }
+        service.clearAllStudents();
+        return OperationResult.ok("已清空全部学生数据。");
+    }
+
     public List<Student> browseAllStudents() {
         return service.listAll();
     }

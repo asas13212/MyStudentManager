@@ -66,6 +66,10 @@ public class StudentService {
         return repository.removeById(studentId);
     }
 
+    public void clearAllStudents() {
+        repository.clearAll();
+    }
+
     public Optional<Student> findById(String studentId) {
         return repository.findById(studentId);
     }

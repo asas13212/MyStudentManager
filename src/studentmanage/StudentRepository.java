@@ -67,5 +67,17 @@ public class StudentRepository {
     public List<Student> getAll() {
         return new ArrayList<>(students);
     }
+
+    public void clearAll() {
+        for (Student student : students) {
+            Student.decreaseTotalCount();
+            if (student instanceof Undergraduate) {
+                Undergraduate.decreaseCount();
+            } else if (student instanceof Postgraduate) {
+                Postgraduate.decreaseCount();
+            }
+        }
+        students.clear();
+    }
 }
 

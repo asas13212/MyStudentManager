@@ -16,6 +16,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Separator;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.ScrollPane;
@@ -52,6 +53,7 @@ import java.util.Collections;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.HashSet;
@@ -110,6 +112,8 @@ public class MainApp extends Application {
     private final Map<String, List<String>> provinceCityMap = buildProvinceCityMap();
     private final Preferences preferences = Preferences.userRoot().node(PREF_NODE);
     private final Map<String, Integer> rankByStudentId = new LinkedHashMap<>();
+    private final Map<String, Map<String, String>> importExtraValuesByStudentId = new HashMap<>();
+    private final LinkedHashSet<String> dynamicExtraColumns = new LinkedHashSet<>();
     private boolean hasUnsavedChanges;
 
     public static void launchApp(StudentService service, String[] args) {
@@ -119,6 +123,10 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage stage) {
+        if (bootstrapService == null) {
+            // Allow launching MainApp directly in IDE without going through Main.main(...).
+            bootstrapService = new StudentService(new StudentRepository(500));
+        }
         service = bootstrapService;
         controller = new MenuController(service);
 
@@ -516,6 +524,17 @@ public class MainApp extends Application {
 
         table.getColumns().addAll(idCol, nameCol, typeCol, classCol);
 
+        for (String extraColumn : dynamicExtraColumns) {
+            TableColumn<Student, String> extraCol = new TableColumn<>(extraColumn);
+            extraCol.setCellValueFactory(data -> {
+                String studentId = data.getValue().getStudentId();
+                Map<String, String> values = importExtraValuesByStudentId.get(studentId);
+                String value = values == null ? "" : values.getOrDefault(extraColumn, "");
+                return new SimpleStringProperty(value);
+            });
+            table.getColumns().add(extraCol);
+        }
+
         for (String subject : subjectNames) {
             TableColumn<Student, String> subjectCol = new TableColumn<>(subject);
             subjectCol.setCellValueFactory(data -> new SimpleStringProperty(
@@ -639,7 +658,13 @@ public class MainApp extends Application {
         Button clearButton = new Button("清空表单");
         clearButton.setMaxWidth(Double.MAX_VALUE);
         clearButton.getStyleClass().add("button-secondary");
-        clearButton.setOnAction(e -> clearForm());
+        clearButton.setOnAction(e -> {
+            if (confirmClearAllStudents()) {
+                clearFormAndAllStudents();
+            } else {
+                setActionMessage("已取消清空操作。", true);
+            }
+        });
 
         HBox queryRow = new HBox(8, queryBox, queryField);
         Button queryButton = new Button("执行查询");
@@ -1274,6 +1299,10 @@ public class MainApp extends Application {
         nameField.clear();
         ageField.setValue(null);
         classField.setValue(null);
+        queryField.clear();
+        if (!subjectField.isDisabled()) {
+            subjectField.clear();
+        }
 
         provinceField.setValue(null);
         cityField.setValue(null);
@@ -1292,16 +1321,55 @@ public class MainApp extends Application {
         setActionMessage("表单已清空，请从学号开始录入。", true);
     }
 
+    private void clearFormAndAllStudents() {
+        clearForm();
+        MenuController.OperationResult result = controller.clearAllStudents();
+        if (!result.isSuccess()) {
+            setActionMessage(result.getMessage(), false);
+            return;
+        }
+        subjectNames.clear();
+        dynamicExtraColumns.clear();
+        importExtraValuesByStudentId.clear();
+        rankByStudentId.clear();
+        renderScoreEditor();
+        rebuildTableColumns();
+        refreshTable(controller.browseAllStudents());
+        updateStatus();
+        setUnsavedChanges(true);
+        setActionMessage("已清空表单和全部学生数据。", true);
+    }
+
+    private boolean confirmClearAllStudents() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("确认清空");
+        alert.setHeaderText("确认清空全部学生数据？");
+        alert.setContentText("此操作会清空当前数据列表，且无法撤销。是否继续？");
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.isPresent() && result.get() == ButtonType.OK;
+    }
+
     private void refreshTable(List<Student> students) {
         List<Student> safeStudents = students == null ? Collections.emptyList() : students;
-        if (subjectNames.isEmpty() && !safeStudents.isEmpty()) {
-            subjectNames.addAll(safeStudents.get(0).getSubjectScores().keySet());
+        List<Student> allStudents = controller.browseAllStudents();
+        List<String> latestSubjects = collectSubjectNames(allStudents);
+        if (!latestSubjects.equals(subjectNames)) {
+            subjectNames.clear();
+            subjectNames.addAll(latestSubjects);
             renderScoreEditor();
             rebuildTableColumns();
         }
         updateRanking(safeStudents);
         table.setItems(FXCollections.observableArrayList(safeStudents));
         table.refresh();
+    }
+
+    private List<String> collectSubjectNames(List<Student> students) {
+        LinkedHashSet<String> subjects = new LinkedHashSet<>();
+        for (Student student : students) {
+            subjects.addAll(student.getSubjectScores().keySet());
+        }
+        return new ArrayList<>(subjects);
     }
 
     private void updateStatus() {
@@ -1391,12 +1459,17 @@ public class MainApp extends Application {
 
         List<String> headers = rows.get(0);
         Map<String, Integer> index = buildHeaderIndex(headers);
-        String[] required = {"学号", "姓名", "类型", "年龄", "班级", "省份", "城市", "街道", "门牌号"};
-        for (String key : required) {
-            if (!index.containsKey(key)) {
-                showError("导入失败", "文件缺少必要列：" + key);
-                return;
-            }
+        if (!hasAnyColumn(index, "学号", "考号", "准考证号", "id", "studentid")) {
+            showError("导入失败", "文件缺少必要列：学号/考号/准考证号");
+            return;
+        }
+        if (!hasAnyColumn(index, "姓名", "学生姓名", "name")) {
+            showError("导入失败", "文件缺少必要列：姓名");
+            return;
+        }
+        if (!hasAnyColumn(index, "班级", "行政班", "班别", "class")) {
+            showError("导入失败", "文件缺少必要列：班级");
+            return;
         }
 
         List<String> importedSubjects = detectSubjectHeaders(headers);
@@ -1404,50 +1477,60 @@ public class MainApp extends Application {
             showError("导入失败", "文件中没有科目列。");
             return;
         }
-
-        if (subjectNames.isEmpty()) {
-            subjectNames.addAll(importedSubjects);
-            renderScoreEditor();
-            rebuildTableColumns();
-        } else if (!new LinkedHashSet<>(subjectNames).equals(new LinkedHashSet<>(importedSubjects))) {
-            showError("导入失败", "导入文件科目与当前系统科目不一致。\n当前科目：" + String.join("、", subjectNames)
-                    + "\n文件科目：" + String.join("、", importedSubjects));
-            return;
-        }
+        List<String> extraHeaders = detectExtraHeaders(headers, importedSubjects);
+        dynamicExtraColumns.addAll(extraHeaders);
 
         int added = 0;
         int updated = 0;
         int failed = 0;
+        int rankingDetected = 0;
 
         for (int r = 1; r < rows.size(); r++) {
             List<String> row = rows.get(r);
-            if (isBlank(getCell(row, index.get("学号")))) {
+            String id = cellByAliases(row, index, "学号", "考号", "准考证号", "id", "studentid");
+            if (isBlank(id)) {
                 continue;
             }
             try {
-                String id = cell(row, index, "学号");
-                String name = cell(row, index, "姓名");
-                String typeText = cell(row, index, "类型");
-                StudentType type = typeText.contains("研") ? StudentType.POSTGRADUATE : StudentType.UNDERGRADUATE;
-                int age = Integer.parseInt(cell(row, index, "年龄"));
-                String className = cell(row, index, "班级");
+                String name = cellByAliases(row, index, "姓名", "学生姓名", "name");
+                String typeText = cellByAliases(row, index, "类型", "学生类型", "类别", "身份");
+                String supervisor = cellByAliases(row, index, "导师", "指导教师", "班主任");
+                String direction = cellByAliases(row, index, "研究方向", "方向");
+                StudentType type = resolveType(typeText, supervisor, direction);
+                int age = parseIntegerOrDefault(cellByAliases(row, index, "年龄", "年级", "age"), 16);
+                String className = cellByAliases(row, index, "班级", "行政班", "班别", "class");
+                String classRank = cellByAliases(row, index, "班级排名", "班排名", "班内排名");
+                String gradeRank = cellByAliases(row, index, "年级排名", "校排名");
+                if (!isBlank(classRank) || !isBlank(gradeRank)) {
+                    rankingDetected++;
+                }
                 Address address = new Address(
-                        cell(row, index, "省份"),
-                        cell(row, index, "城市"),
-                        cell(row, index, "街道"),
-                        cell(row, index, "门牌号")
+                        fallbackIfBlank(cellByAliases(row, index, "省份", "省"), "未知省份"),
+                        fallbackIfBlank(cellByAliases(row, index, "城市", "市"), "未知城市"),
+                        fallbackIfBlank(cellByAliases(row, index, "街道", "详细地址", "地址"), "未知街道"),
+                        fallbackIfBlank(cellByAliases(row, index, "门牌号", "门牌"), "0")
                 );
 
                 LinkedHashMap<String, Double> scores = new LinkedHashMap<>();
-                for (String subject : subjectNames) {
+                for (String subject : importedSubjects) {
                     String scoreText = cell(row, index, subject);
-                    double score = Double.parseDouble(scoreText);
+                    double score = parseFlexibleScore(scoreText, subject);
                     scores.put(subject, score);
                 }
 
-                String major = index.containsKey("专业") ? getCell(row, index.get("专业")) : "";
-                String supervisor = index.containsKey("导师") ? getCell(row, index.get("导师")) : "";
-                String direction = index.containsKey("研究方向") ? getCell(row, index.get("研究方向")) : "";
+                rememberExtraValues(id, extraHeaders, row, index);
+
+                String major = cellByAliases(row, index, "专业", "学科", "方向");
+                if (isBlank(major) && (!isBlank(classRank) || !isBlank(gradeRank))) {
+                    StringBuilder majorBuilder = new StringBuilder("高中生成绩单");
+                    if (!isBlank(classRank)) {
+                        majorBuilder.append(" 班级排名=").append(classRank);
+                    }
+                    if (!isBlank(gradeRank)) {
+                        majorBuilder.append(" 年级排名=").append(gradeRank);
+                    }
+                    major = majorBuilder.toString();
+                }
 
                 MenuController.StudentFormData data = new MenuController.StudentFormData(
                         type, id, name, age, className, address, scores,
@@ -1481,7 +1564,8 @@ public class MainApp extends Application {
         if (markUnsavedAfterImport && (added > 0 || updated > 0)) {
             setUnsavedChanges(true);
         }
-        setActionMessage("导入完成：新增 " + added + "，更新 " + updated + "，失败 " + failed, failed == 0);
+        String rankNote = rankingDetected > 0 ? "，识别班级/年级排名 " + rankingDetected + " 行" : "";
+        setActionMessage("导入完成：新增 " + added + "，更新 " + updated + "，失败 " + failed + rankNote, failed == 0);
         if (silentOnSuccess) {
             if (failed == 0) {
                 setActionMessage("已自动读取最近保存文件：" + source.getAbsolutePath(), true);
@@ -1489,7 +1573,7 @@ public class MainApp extends Application {
                 showInfo("自动读取完成", "最近保存文件读取完成。\n新增：" + added + "\n更新：" + updated + "\n失败：" + failed);
             }
         } else {
-            showInfo("导入完成", "新增：" + added + "\n更新：" + updated + "\n失败：" + failed);
+            showInfo("导入完成", "新增：" + added + "\n更新：" + updated + "\n失败：" + failed + "\n识别排名：" + rankingDetected);
         }
     }
 
@@ -1499,6 +1583,7 @@ public class MainApp extends Application {
             String h = headers.get(i) == null ? "" : headers.get(i).trim();
             if (!h.isEmpty()) {
                 index.put(h, i);
+                index.put(normalizeHeader(h), i);
             }
         }
         return index;
@@ -1506,29 +1591,141 @@ public class MainApp extends Application {
 
     private List<String> detectSubjectHeaders(List<String> headers) {
         List<String> subjects = new ArrayList<>();
-        Set<String> fixed = new HashSet<>();
-        fixed.add("学号");
-        fixed.add("姓名");
-        fixed.add("类型");
-        fixed.add("年龄");
-        fixed.add("班级");
-        fixed.add("省份");
-        fixed.add("城市");
-        fixed.add("街道");
-        fixed.add("门牌号");
-        fixed.add("总分");
-        fixed.add("排名");
-        fixed.add("专业");
-        fixed.add("导师");
-        fixed.add("研究方向");
+        Set<String> seenSubjects = new HashSet<>();
 
         for (String header : headers) {
             String h = header == null ? "" : header.trim();
-            if (!h.isEmpty() && !fixed.contains(h)) {
+            if (!h.isEmpty() && !isMetaHeader(h) && seenSubjects.add(h)) {
                 subjects.add(h);
             }
         }
         return subjects;
+    }
+
+    private List<String> detectExtraHeaders(List<String> headers, List<String> subjectHeaders) {
+        List<String> extras = new ArrayList<>();
+        LinkedHashSet<String> subjectSet = new LinkedHashSet<>(subjectHeaders);
+        for (String header : headers) {
+            String h = header == null ? "" : header.trim();
+            if (h.isEmpty()) {
+                continue;
+            }
+            String normalized = normalizeHeader(h);
+            if (subjectSet.contains(h)) {
+                continue;
+            }
+            if ("班级排名".equals(normalized) || "班排名".equals(normalized) || "班内排名".equals(normalized)
+                    || "年级排名".equals(normalized) || "校排名".equals(normalized)) {
+                extras.add(h);
+            }
+        }
+        return extras;
+    }
+
+    private void rememberExtraValues(String studentId, List<String> extraHeaders, List<String> row, Map<String, Integer> index) {
+        if (studentId == null || studentId.trim().isEmpty() || extraHeaders.isEmpty()) {
+            return;
+        }
+        Map<String, String> values = importExtraValuesByStudentId.computeIfAbsent(studentId, k -> new LinkedHashMap<>());
+        for (String header : extraHeaders) {
+            String value = cell(row, index, header);
+            values.put(header, value);
+        }
+    }
+
+    private boolean isMetaHeader(String header) {
+        String normalized = normalizeHeader(header);
+        Set<String> fixed = new HashSet<>(Arrays.asList(
+                "学号", "考号", "准考证号", "id", "studentid",
+                "姓名", "学生姓名", "name",
+                "类型", "学生类型", "类别", "身份",
+                "年龄", "年级", "age",
+                "班级", "行政班", "班别", "class",
+                "省份", "省", "城市", "市", "街道", "详细地址", "地址", "门牌号", "门牌",
+                "总分", "排名", "年级排名", "校排名", "班级排名", "班排名", "班内排名",
+                "专业", "学科", "导师", "指导教师", "班主任", "研究方向", "方向"
+        ));
+        return fixed.contains(normalized);
+    }
+
+    private String normalizeHeader(String header) {
+        if (header == null) {
+            return "";
+        }
+        return header.trim().toLowerCase(Locale.ROOT).replace(" ", "");
+    }
+
+    private boolean hasAnyColumn(Map<String, Integer> index, String... aliases) {
+        return findColumn(index, aliases) != null;
+    }
+
+    private Integer findColumn(Map<String, Integer> index, String... aliases) {
+        for (String alias : aliases) {
+            if (alias == null) {
+                continue;
+            }
+            Integer pos = index.get(alias);
+            if (pos != null) {
+                return pos;
+            }
+            pos = index.get(normalizeHeader(alias));
+            if (pos != null) {
+                return pos;
+            }
+        }
+        return null;
+    }
+
+    private String cellByAliases(List<String> row, Map<String, Integer> index, String... aliases) {
+        Integer pos = findColumn(index, aliases);
+        if (pos == null) {
+            return "";
+        }
+        return getCell(row, pos).trim();
+    }
+
+    private int parseIntegerOrDefault(String text, int defaultValue) {
+        String value = text == null ? "" : text.trim();
+        if (value.isEmpty()) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ex) {
+            return defaultValue;
+        }
+    }
+
+    private String fallbackIfBlank(String text, String fallback) {
+        return isBlank(text) ? fallback : text.trim();
+    }
+
+    private StudentType resolveType(String typeText, String supervisor, String direction) {
+        String type = typeText == null ? "" : typeText.trim();
+        if (type.contains("研") || !isBlank(supervisor) || !isBlank(direction)) {
+            return StudentType.POSTGRADUATE;
+        }
+        return StudentType.UNDERGRADUATE;
+    }
+
+    private double parseFlexibleScore(String scoreText, String subject) {
+        String value = scoreText == null ? "" : scoreText.trim();
+        if (value.isEmpty()) {
+            return 0.0;
+        }
+        try {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException ignore) {
+            String numeric = value.replaceAll("[^0-9.\\-]", "");
+            if (numeric.isEmpty() || "-".equals(numeric) || ".".equals(numeric)) {
+                throw new IllegalArgumentException("科目【" + subject + "】成绩不是数字：" + value);
+            }
+            try {
+                return Double.parseDouble(numeric);
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException("科目【" + subject + "】成绩不是数字：" + value);
+            }
+        }
     }
 
     private String cell(List<String> row, Map<String, Integer> index, String key) {
