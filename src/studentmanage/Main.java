@@ -2,7 +2,7 @@ package studentmanage;
 
 public class Main {
     public static void main(String[] args) {
-        StudentRepository repository = new StudentRepository(500);
+        StudentRepository repository = new StudentRepository(2000);
         StudentService service = new StudentService(repository);
         MainApp.launchApp(service, args);
     }
