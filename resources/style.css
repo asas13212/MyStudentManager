@@ -10,6 +10,42 @@
     -fx-background-color: #f5f7fa;
 }
 
+.launch-root {
+    -fx-background-color: #10213a;
+}
+
+.launch-card {
+    -fx-background-color: rgba(16, 33, 58, 0.36);
+    -fx-background-radius: 24px;
+    -fx-border-color: rgba(255, 255, 255, 0.24);
+    -fx-border-radius: 24px;
+    -fx-padding: 32px 40px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 24, 0, 0, 8);
+}
+
+.launch-title {
+    -fx-font-family: "SimSun", "宋体";
+    -fx-font-size: 42px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 6, 0, 0, 1);
+}
+
+.launch-hint {
+    -fx-font-size: 14px;
+    -fx-text-fill: rgba(255, 255, 255, 0.88);
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+    -fx-max-width: 360px;
+}
+
+.launch-enter-button {
+    -fx-min-width: 160px;
+    -fx-padding: 12px 28px;
+    -fx-font-size: 16px;
+    -fx-background-radius: 999px;
+}
+
 .main-scroll-pane,
 .right-scroll-pane {
     -fx-background-color: transparent;

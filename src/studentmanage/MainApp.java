@@ -130,6 +130,22 @@ public class MainApp extends Application {
         service = bootstrapService;
         controller = new MenuController(service);
 
+        Scene mainScene = buildMainScene();
+        Scene startupScene = buildStartupScene(() -> enterMainInterface(stage, mainScene));
+
+        String stylesheet = resolveStyleSheet();
+        if (stylesheet != null) {
+            mainScene.getStylesheets().add(stylesheet);
+            startupScene.getStylesheets().add(stylesheet);
+        }
+
+        stage.setTitle("学生管理系统");
+        stage.setScene(startupScene);
+        setWindowIcon(stage);
+        stage.show();
+    }
+
+    private Scene buildMainScene() {
         BorderPane root = new BorderPane();
         root.setCenter(buildScrollableCenter());
         root.setBottom(buildStatusBar());
@@ -138,19 +154,60 @@ public class MainApp extends Application {
         refreshTable(controller.browseAllStudents());
         updateStatus();
 
-        Scene scene = new Scene(root, 1380, 760);
-        stage.setTitle("学生信息管理系统");
-        stage.setScene(scene);
-        setWindowIcon(stage);
-        String stylesheet = resolveStyleSheet();
-        if (stylesheet != null) {
-            scene.getStylesheets().add(stylesheet);
+        return new Scene(root, 1380, 760);
+    }
+
+    private Scene buildStartupScene(Runnable enterAction) {
+        ImageView background = new ImageView();
+        background.setPreserveRatio(false);
+        background.setSmooth(true);
+        background.setMouseTransparent(true);
+
+        String backgroundPath = resolveImagePath("background.png");
+        if (backgroundPath != null) {
+            background.setImage(new Image(backgroundPath, true));
         }
-        stage.setOnShown(e -> {
-            idField.requestFocus();
-            Platform.runLater(this::tryAutoLoadLastSavedFile);
+
+        Label title = new Label("学生管理系统");
+        title.getStyleClass().add("launch-title");
+        title.setStyle("-fx-font-family: 'SimSun', '宋体';");
+
+        Label hint = new Label("欢迎进入学生管理系统，后续可无缝扩展老师端与学生端。\n当前预留为统一入口页面。");
+        hint.getStyleClass().add("launch-hint");
+        hint.setWrapText(true);
+
+        Button enterButton = new Button("点我进入");
+        enterButton.getStyleClass().addAll("button-primary", "launch-enter-button");
+        enterButton.setOnAction(e -> {
+            if (enterAction != null) {
+                enterAction.run();
+            }
         });
-        stage.show();
+
+        VBox card = new VBox(16, title, hint, enterButton);
+        card.getStyleClass().add("launch-card");
+        card.setAlignment(Pos.CENTER);
+        card.setMaxWidth(480);
+        card.setFillWidth(true);
+
+        StackPane root = new StackPane(background, card);
+        root.getStyleClass().add("launch-root");
+        StackPane.setAlignment(card, Pos.CENTER);
+
+        Scene scene = new Scene(root, 1380, 760);
+        background.fitWidthProperty().bind(scene.widthProperty());
+        background.fitHeightProperty().bind(scene.heightProperty());
+        return scene;
+    }
+
+    private void enterMainInterface(Stage stage, Scene mainScene) {
+        stage.setTitle("学生信息管理系统");
+        stage.setScene(mainScene);
+        stage.centerOnScreen();
+        Platform.runLater(() -> {
+            idField.requestFocus();
+            tryAutoLoadLastSavedFile();
+        });
     }
 
     private VBox buildHeader() {
