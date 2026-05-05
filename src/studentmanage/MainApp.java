@@ -134,7 +134,12 @@ public class MainApp extends Application {
     private TitledPane importPane;
 
     public static void launchApp(StudentService service, String[] args) {
-        bootstrapService = service;
+        if (service == null) {
+            // Fallback for miswired entry points.
+            bootstrapService = new StudentService(new StudentRepository(2000));
+        } else {
+            bootstrapService = service;
+        }
         launch(args);
     }
 
@@ -145,6 +150,10 @@ public class MainApp extends Application {
             bootstrapService = new StudentService(new StudentRepository(2000));
         }
         service = bootstrapService;
+        if (service == null) {
+            service = new StudentService(new StudentRepository(2000));
+            bootstrapService = service;
+        }
         controller = new MenuController(service);
 
         Scene mainScene = buildMainScene();
@@ -2048,7 +2057,7 @@ public class MainApp extends Application {
         return score;
     }
 
-    private int resolveIdColumn(Map<String, Integer> index, List<String> headers, int dataStartRow) {
+    private int resolveIdColumn(Map<String, Integer> index, List<String> headers, int dataStartRow, List<List<String>> rows) {
         Integer direct = findColumn(index, "学号", "考号", "准考证号", "学生ID", "studentid", "id");
         if (direct != null) {
             return direct;
