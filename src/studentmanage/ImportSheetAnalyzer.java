@@ -130,6 +130,7 @@ public final class ImportSheetAnalyzer {
 		return text.replace('\u3000', ' ').trim();
 	}
 
+
 	private static int detectHeaderRowIndex(List<List<String>> rows) {
 		if (rows == null || rows.isEmpty()) {
 			return -1;
@@ -541,6 +542,14 @@ public final class ImportSheetAnalyzer {
 		return aliases;
 	}
 
+	/**
+	 * 作者：cyt
+	 * 功能：按同义词查找列。
+	 * 编写时间：2026-05-05
+	 * @param index 表头索引
+	 * @param aliases 同义词
+	 * @return 列索引
+	 */
 	private static Integer findColumn(Map<String, Integer> index, String... aliases) {
 		for (String alias : aliases) {
 			if (alias == null) {
@@ -558,10 +567,25 @@ public final class ImportSheetAnalyzer {
 		return null;
 	}
 
+	/**
+	 * 作者：cyt
+	 * 功能：规范化表头。
+	 * 编写时间：2026-05-05
+	 * @param header 表头文本
+	 * @return 规范文本
+	 */
 	private static String normalizeHeader(String header) {
 		return normalizeText(header).toLowerCase(Locale.ROOT).replace(" ", "");
 	}
 
+	/**
+	 * 作者：cyt
+	 * 功能：判断是否包含关键字。
+	 * 编写时间：2026-05-05
+	 * @param value 文本
+	 * @param keys 关键字
+	 * @return 是否包含
+	 */
 	private static boolean containsAny(String value, String... keys) {
 		for (String key : keys) {
 			if (value.contains(key.toLowerCase(Locale.ROOT))) {
@@ -571,6 +595,13 @@ public final class ImportSheetAnalyzer {
 		return false;
 	}
 
+	/**
+	 * 作者：cyt
+	 * 功能：判断文本是否可视为数字。
+	 * 编写时间：2026-05-05
+	 * @param text 文本
+	 * @return 是否为数字
+	 */
 	private static boolean isNumericLike(String text) {
 		String value = normalizeText(text).replace(",", "");
 		if (value.isEmpty()) {
@@ -592,6 +623,13 @@ public final class ImportSheetAnalyzer {
 		return !numeric.isEmpty() && numeric.matches("-?\\d+(\\.\\d+)?");
 	}
 
+	/**
+	 * 作者：cyt
+	 * 功能：判断表头是否为成绩类。
+	 * 编写时间：2026-05-05
+	 * @param normalizedHeader 规范表头
+	 * @return 是否为成绩类
+	 */
 	private static boolean isScoreLikeHeader(String normalizedHeader) {
 		if (containsAny(normalizedHeader, "等级", "等第", "名次", "排名", "位次")) {
 			return false;
@@ -600,11 +638,25 @@ public final class ImportSheetAnalyzer {
 				"分", "成绩", "score", "语文", "数学", "英语", "物理", "化学", "生物", "政治", "历史", "地理");
 	}
 
+	/**
+	 * 作者：cyt
+	 * 功能：判断表头是否为排名类。
+	 * 编写时间：2026-05-05
+	 * @param normalizedHeader 规范表头
+	 * @return 是否为排名类
+	 */
 	private static boolean isRankingLikeHeader(String normalizedHeader) {
 		return containsAny(normalizedHeader,
 				"排名", "名次", "位次", "序号", "座号", "考场", "考号", "学号", "编号", "班内");
 	}
 
+	/**
+	 * 作者：cyt
+	 * 功能：判断是否为核心信息表头。
+	 * 编写时间：2026-05-05
+	 * @param normalized 规范表头
+	 * @return 是否为核心信息
+	 */
 	private static boolean isCoreMetaHeader(String normalized) {
 		Set<String> core = new LinkedHashSet<>(Arrays.asList(
 				"学号", "考号", "准考证号", "id", "studentid", "学生id",
@@ -745,5 +797,4 @@ public final class ImportSheetAnalyzer {
 		}
 	}
 }
-
 
