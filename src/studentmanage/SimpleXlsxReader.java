@@ -17,19 +17,44 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+/**
+ * 作者：cyt
+ * 功能：简易 XLSX 读取工具。
+ * 编写时间：2026-05-05
+ */
 public final class SimpleXlsxReader {
 
+    /** 行 XML 匹配模式。作者：cyt；编写时间：2026-05-05 */
     private static final Pattern ROW_PATTERN = Pattern.compile("<row[^>]*>(.*?)</row>", Pattern.DOTALL);
+    /** 单元格 XML 匹配模式。作者：cyt；编写时间：2026-05-05 */
     private static final Pattern CELL_PATTERN = Pattern.compile("<c[^>]*r=\\\"([A-Z]+)([0-9]+)\\\"([^>]*)>(.*?)</c>", Pattern.DOTALL);
+    /** 内联文本匹配模式。作者：cyt；编写时间：2026-05-05 */
     private static final Pattern INLINE_TEXT_PATTERN = Pattern.compile("<t[^>]*>(.*?)</t>", Pattern.DOTALL);
+    /** 值标签匹配模式。作者：cyt；编写时间：2026-05-05 */
     private static final Pattern VALUE_PATTERN = Pattern.compile("<v>(.*?)</v>", Pattern.DOTALL);
+    /** 共享字符串项匹配模式。作者：cyt；编写时间：2026-05-05 */
     private static final Pattern SHARED_ITEM_PATTERN = Pattern.compile("<si[^>]*>(.*?)</si>", Pattern.DOTALL);
+    /** 工作表标签匹配模式。作者：cyt；编写时间：2026-05-05 */
     private static final Pattern SHEET_TAG_PATTERN = Pattern.compile("<sheet[^>]*name=\\\"(.*?)\\\"[^>]*r:id=\\\"(.*?)\\\"[^>]*/?>", Pattern.DOTALL);
+    /** 关系标签匹配模式。作者：cyt；编写时间：2026-05-05 */
     private static final Pattern REL_PATTERN = Pattern.compile("<Relationship[^>]*Id=\\\"(.*?)\\\"[^>]*Type=\\\"(.*?)\\\"[^>]*Target=\\\"(.*?)\\\"[^>]*/?>", Pattern.DOTALL);
 
+    /**
+     * 作者：cyt
+     * 功能：禁止实例化。
+     * 编写时间：2026-05-05
+     */
     private SimpleXlsxReader() {
     }
 
+    /**
+     * 作者：cyt
+     * 功能：读取 XLSX 为二维字符串列表。
+     * 编写时间：2026-05-05
+     * @param file XLSX 文件
+     * @return 行列数据
+     * @throws IOException 读取异常
+     */
     public static List<List<String>> read(File file) throws IOException {
         try (ZipFile zip = new ZipFile(file, StandardCharsets.UTF_8)) {
             List<String> sheetPaths = resolveWorksheetPaths(zip);
@@ -65,6 +90,14 @@ public final class SimpleXlsxReader {
         }
     }
 
+    /**
+     * 作者：cyt
+     * 功能：解析工作表路径列表。
+     * 编写时间：2026-05-05
+     * @param zip Zip 文件
+     * @return 工作表路径
+     * @throws IOException 读取异常
+     */
     private static List<String> resolveWorksheetPaths(ZipFile zip) throws IOException {
         List<String> paths = new ArrayList<>();
 
@@ -109,6 +142,13 @@ public final class SimpleXlsxReader {
         return paths;
     }
 
+    /**
+     * 作者：cyt
+     * 功能：规范化工作表路径。
+     * 编写时间：2026-05-05
+     * @param target 目标路径
+     * @return 规范路径
+     */
     private static String normalizeWorksheetPath(String target) {
         if (target == null || target.trim().isEmpty()) {
             return "";
@@ -132,6 +172,15 @@ public final class SimpleXlsxReader {
         return "xl/" + normalized;
     }
 
+    /**
+     * 作者：cyt
+     * 功能：读取 Zip 条目为字符串。
+     * 编写时间：2026-05-05
+     * @param zip Zip 文件
+     * @param entryName 条目名称
+     * @return XML 字符串
+     * @throws IOException 读取异常
+     */
     private static String readZipEntryAsString(ZipFile zip, String entryName) throws IOException {
         ZipEntry entry = zip.getEntry(entryName);
         if (entry == null) {
@@ -142,6 +191,16 @@ public final class SimpleXlsxReader {
         }
     }
 
+    /**
+     * 作者：cyt
+     * 功能：读取工作表行数据。
+     * 编写时间：2026-05-05
+     * @param zip Zip 文件
+     * @param sheetPath 工作表路径
+     * @param sharedStrings 共享字符串
+     * @return 行数据
+     * @throws IOException 读取异常
+     */
     private static List<List<String>> readWorksheetRows(ZipFile zip, String sheetPath, List<String> sharedStrings) throws IOException {
         ZipEntry sheet = zip.getEntry(sheetPath);
         if (sheet == null) {
@@ -161,6 +220,13 @@ public final class SimpleXlsxReader {
         return rows;
     }
 
+    /**
+     * 作者：cyt
+     * 功能：对工作表进行评分选择。
+     * 编写时间：2026-05-05
+     * @param rows 行数据
+     * @return 评分
+     */
     private static int scoreWorksheet(List<List<String>> rows) {
         if (rows == null || rows.isEmpty()) {
             return Integer.MIN_VALUE;
@@ -190,6 +256,14 @@ public final class SimpleXlsxReader {
         return headerHit * 5 + nonEmptyRows;
     }
 
+    /**
+     * 作者：cyt
+     * 功能：文本是否包含关键字。
+     * 编写时间：2026-05-05
+     * @param text 文本
+     * @param keys 关键字
+     * @return 是否包含
+     */
     private static boolean containsAny(String text, String... keys) {
         String lower = text.toLowerCase();
         for (String key : keys) {
@@ -200,6 +274,14 @@ public final class SimpleXlsxReader {
         return false;
     }
 
+    /**
+     * 作者：cyt
+     * 功能：读取共享字符串表。
+     * 编写时间：2026-05-05
+     * @param zip Zip 文件
+     * @return 共享字符串列表
+     * @throws IOException 读取异常
+     */
     private static List<String> readSharedStrings(ZipFile zip) throws IOException {
         ZipEntry shared = zip.getEntry("xl/sharedStrings.xml");
         if (shared == null) {
@@ -225,6 +307,14 @@ public final class SimpleXlsxReader {
         return values;
     }
 
+    /**
+     * 作者：cyt
+     * 功能：解析单行 XML 为单元格值列表。
+     * 编写时间：2026-05-05
+     * @param rowXml 行 XML
+     * @param sharedStrings 共享字符串
+     * @return 行数据
+     */
     private static List<String> parseRow(String rowXml, List<String> sharedStrings) {
         Map<Integer, String> values = new HashMap<>();
         Matcher cellMatcher = CELL_PATTERN.matcher(rowXml);
@@ -250,6 +340,15 @@ public final class SimpleXlsxReader {
         return row;
     }
 
+    /**
+     * 作者：cyt
+     * 功能：解析单元格值。
+     * 编写时间：2026-05-05
+     * @param attrs 属性
+     * @param body 内容
+     * @param sharedStrings 共享字符串
+     * @return 单元格值
+     */
     private static String parseCellValue(String attrs, String body, List<String> sharedStrings) {
         if (attrs != null && attrs.contains("inlineStr")) {
             Matcher m = INLINE_TEXT_PATTERN.matcher(body);
@@ -277,6 +376,14 @@ public final class SimpleXlsxReader {
         return "";
     }
 
+    /**
+     * 作者：cyt
+     * 功能：读取输入流全部字节。
+     * 编写时间：2026-05-05
+     * @param in 输入流
+     * @return 字节数组
+     * @throws IOException 读取异常
+     */
     private static byte[] readAll(InputStream in) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] buffer = new byte[4096];
@@ -287,6 +394,13 @@ public final class SimpleXlsxReader {
         return out.toByteArray();
     }
 
+    /**
+     * 作者：cyt
+     * 功能：将列字母转换为索引。
+     * 编写时间：2026-05-05
+     * @param col 列字母
+     * @return 索引
+     */
     private static int colToIndex(String col) {
         int idx = 0;
         for (int i = 0; i < col.length(); i++) {
@@ -295,6 +409,13 @@ public final class SimpleXlsxReader {
         return idx - 1;
     }
 
+    /**
+     * 作者：cyt
+     * 功能：反转义 XML 字符。
+     * 编写时间：2026-05-05
+     * @param text XML 文本
+     * @return 原始文本
+     */
     private static String unescapeXml(String text) {
         return text.replace("&lt;", "<")
                 .replace("&gt;", ">")
@@ -303,4 +424,3 @@ public final class SimpleXlsxReader {
                 .replace("&amp;", "&");
     }
 }
-

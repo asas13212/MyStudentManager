@@ -1,6 +1,17 @@
 package studentmanage;
 
+/**
+ * 作者：cyt
+ * 功能：程序入口，初始化服务并启动界面。
+ * 编写时间：2026-05-05
+ */
 public class Main {
+    /**
+     * 作者：cyt
+     * 功能：启动应用并注入业务服务。
+     * 编写时间：2026-05-05
+     * @param args 启动参数
+     */
     public static void main(String[] args) {
         StudentRepository repository = new StudentRepository(2000);
         StudentService service = new StudentService(repository);
