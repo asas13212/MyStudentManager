@@ -103,7 +103,7 @@ public class MainApp extends Application {
     private final TextField streetField = new TextField();
     private final TextField houseNoField = new TextField();
 
-    private final TextField majorField = new TextField();
+    private final ComboBox<String> majorField = new ComboBox<>();
     private final TextField supervisorField = new TextField();
     private final TextField directionField = new TextField();
     private final VBox scoreRowsBox = new VBox(8);
@@ -112,6 +112,7 @@ public class MainApp extends Application {
     private final List<TextField> subjectNameFields = new ArrayList<>();
     private final List<TextField> scoreValueFields = new ArrayList<>();
     private final List<String> subjectNames = new ArrayList<>();
+    private final Label totalScoreLabel = new Label("总分：0.00");
 
     private final ComboBox<String> queryBox = new ComboBox<>();
     private final TextField queryField = new TextField();
@@ -131,6 +132,8 @@ public class MainApp extends Application {
     private Button quickAddButton;
     private Button clearButton;
     private Button importButton;
+    private Button generateBatchButton;
+    private Button activeBrowseButton;
     private TitledPane importPane;
 
     public static void launchApp(StudentService service, String[] args) {
@@ -207,10 +210,11 @@ public class MainApp extends Application {
             background.setImage(new Image(backgroundPath, true));
         }
 
+        // 头像
         ImageView avatar = new ImageView();
         avatar.getStyleClass().add("launch-avatar");
-        avatar.setFitWidth(120);
-        avatar.setFitHeight(120);
+        avatar.setFitWidth(100);
+        avatar.setFitHeight(100);
         avatar.setPreserveRatio(false);
         avatar.setSmooth(true);
         avatar.setMouseTransparent(true);
@@ -218,19 +222,30 @@ public class MainApp extends Application {
         if (avatarPath != null) {
             avatar.setImage(new Image(avatarPath, true));
         }
-        Circle clip = new Circle(60, 60, 60);
+        Circle clip = new Circle(50, 50, 50);
         avatar.setClip(clip);
 
+        // 标题
         Label title = new Label("学生管理系统");
         title.getStyleClass().add("launch-title");
-        title.setStyle("-fx-font-family: 'SimSun', '宋体';");
 
-        Label hint = new Label("请选择进入身份：学生端可查看与导入导出，老师端需验证后进入。\n后续可继续扩展老师端与学生端。");
-        hint.getStyleClass().add("launch-hint");
-        hint.setWrapText(true);
+        // 英文副标题
+        Label subtitle = new Label("STUDENT MANAGEMENT SYSTEM");
+        subtitle.getStyleClass().add("launch-subtitle");
 
+        // 装饰分隔线
+        Region divider = new Region();
+        divider.getStyleClass().add("launch-divider");
+        divider.setMaxWidth(60);
+        divider.setPrefHeight(2);
+
+        // 版本号
+        Label version = new Label("v2.1.0");
+        version.getStyleClass().add("launch-version");
+
+        // 按钮
         Button studentButton = new Button("学生端");
-        studentButton.getStyleClass().addAll("button-secondary", "launch-enter-button", "launch-student-button");
+        studentButton.getStyleClass().addAll("launch-enter-button", "launch-student-button");
         studentButton.setMaxWidth(Double.MAX_VALUE);
         studentButton.setOnAction(e -> {
             if (enterAction != null) {
@@ -240,7 +255,7 @@ public class MainApp extends Application {
         });
 
         Button teacherButton = new Button("老师端");
-        teacherButton.getStyleClass().addAll("button-primary", "launch-enter-button", "launch-teacher-button");
+        teacherButton.getStyleClass().addAll("launch-enter-button", "launch-teacher-button");
         teacherButton.setMaxWidth(Double.MAX_VALUE);
         teacherButton.setOnAction(e -> {
             if (showTeacherLoginDialog()) {
@@ -251,16 +266,16 @@ public class MainApp extends Application {
             }
         });
 
-        HBox buttonRow = new HBox(12, studentButton, teacherButton);
+        HBox buttonRow = new HBox(16, studentButton, teacherButton);
         buttonRow.setAlignment(Pos.CENTER);
         buttonRow.setFillHeight(true);
         HBox.setHgrow(studentButton, Priority.ALWAYS);
         HBox.setHgrow(teacherButton, Priority.ALWAYS);
 
-        VBox card = new VBox(16, avatar, title, hint, buttonRow);
+        VBox card = new VBox(12, avatar, title, subtitle, divider, buttonRow, version);
         card.getStyleClass().add("launch-card");
         card.setAlignment(Pos.CENTER);
-        card.setMaxWidth(480);
+        card.setMaxWidth(440);
         card.setFillWidth(true);
 
         StackPane root = new StackPane(background, card);
@@ -287,29 +302,50 @@ public class MainApp extends Application {
     private boolean showTeacherLoginDialog() {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("老师端身份验证");
-        dialog.setHeaderText("请输入管理员账号与密码后进入老师端");
+        dialog.setHeaderText(null);
         dialog.getDialogPane().getStyleClass().add("teacher-login-dialog");
-        dialog.getDialogPane().setPrefWidth(460);
+        dialog.getDialogPane().setPrefWidth(420);
+
+        // 头像
+        ImageView loginAvatar = new ImageView();
+        loginAvatar.setFitWidth(72);
+        loginAvatar.setFitHeight(72);
+        loginAvatar.setPreserveRatio(false);
+        loginAvatar.setSmooth(true);
+        String avatarPath = resolveImagePath("ncu.png");
+        if (avatarPath != null) {
+            loginAvatar.setImage(new Image(avatarPath, true));
+        }
+        Circle avatarClip = new Circle(36, 36, 36);
+        loginAvatar.setClip(avatarClip);
+        loginAvatar.getStyleClass().add("login-avatar");
+
+        Label loginTitle = new Label("老师端登录");
+        loginTitle.getStyleClass().add("login-title");
 
         TextField usernameField = new TextField(TEACHER_USERNAME);
         usernameField.setPromptText("管理员账号");
-        usernameField.setPrefWidth(280);
+        usernameField.setMaxWidth(Double.MAX_VALUE);
+        usernameField.getStyleClass().add("login-field");
 
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("请输入密码");
-        passwordField.setPrefWidth(280);
+        passwordField.setMaxWidth(Double.MAX_VALUE);
+        passwordField.getStyleClass().add("login-field");
 
-        GridPane pane = new GridPane();
-        pane.setHgap(10);
-        pane.setVgap(12);
-        pane.setPadding(new Insets(14, 8, 4, 8));
-        pane.setAlignment(Pos.CENTER_LEFT);
-        pane.add(new Label("管理员："), 0, 0);
-        pane.add(usernameField, 1, 0);
-        pane.add(new Label("密码："), 0, 1);
-        pane.add(passwordField, 1, 1);
+        VBox content = new VBox(12);
+        content.setAlignment(Pos.CENTER);
+        content.setPadding(new Insets(10, 20, 10, 20));
+        content.getChildren().addAll(
+                loginAvatar,
+                loginTitle,
+                new Label("管理员"),
+                usernameField,
+                new Label("密码"),
+                passwordField
+        );
 
-        dialog.getDialogPane().setContent(pane);
+        dialog.getDialogPane().setContent(content);
         ButtonType loginType = new ButtonType("登录", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
         ButtonType changePasswordType = new ButtonType("修改密码", javafx.scene.control.ButtonBar.ButtonData.OTHER);
         ButtonType cancelType = ButtonType.CANCEL;
@@ -836,6 +872,36 @@ public class MainApp extends Application {
 
         table.getColumns().addAll(idCol, nameCol, typeCol, classCol);
 
+        TableColumn<Student, String> majorCol = new TableColumn<>("专业");
+        majorCol.setCellValueFactory(data -> {
+            Student s = data.getValue();
+            if (s instanceof Undergraduate) {
+                return new SimpleStringProperty(((Undergraduate) s).getMajor());
+            }
+            return new SimpleStringProperty("");
+        });
+        table.getColumns().add(majorCol);
+
+        TableColumn<Student, String> supervisorCol = new TableColumn<>("导师");
+        supervisorCol.setCellValueFactory(data -> {
+            Student s = data.getValue();
+            if (s instanceof Postgraduate) {
+                return new SimpleStringProperty(((Postgraduate) s).getSupervisor());
+            }
+            return new SimpleStringProperty("");
+        });
+        table.getColumns().add(supervisorCol);
+
+        TableColumn<Student, String> directionCol = new TableColumn<>("方向");
+        directionCol.setCellValueFactory(data -> {
+            Student s = data.getValue();
+            if (s instanceof Postgraduate) {
+                return new SimpleStringProperty(((Postgraduate) s).getResearchDirection());
+            }
+            return new SimpleStringProperty("");
+        });
+        table.getColumns().add(directionCol);
+
         for (String extraColumn : dynamicExtraColumns) {
             TableColumn<Student, String> extraCol = new TableColumn<>(extraColumn);
             extraCol.setCellValueFactory(data -> {
@@ -985,6 +1051,16 @@ public class MainApp extends Application {
             }
         });
 
+        Button deleteFormButton = new Button("删除当前学生");
+        deleteFormButton.setMaxWidth(Double.MAX_VALUE);
+        deleteFormButton.getStyleClass().add("button-danger");
+        deleteFormButton.setOnAction(e -> deleteStudent());
+
+        generateBatchButton = new Button("批量生成300人");
+        generateBatchButton.setMaxWidth(Double.MAX_VALUE);
+        generateBatchButton.getStyleClass().add("button-primary");
+        generateBatchButton.setOnAction(e -> generateBatchStudents());
+
         HBox queryRow = new HBox(8, queryBox, queryField);
         Button queryButton = new Button("执行查询");
         Button resetButton = new Button("重置列表");
@@ -1002,19 +1078,24 @@ public class MainApp extends Application {
         Button browseUnderButton = new Button("本科生");
         Button browsePostButton = new Button("研究生");
         Button statsButton = new Button("统计");
-        browseAllButton.getStyleClass().add("button-secondary");
+        browseAllButton.getStyleClass().add("button-primary");
         browseUnderButton.getStyleClass().add("button-secondary");
         browsePostButton.getStyleClass().add("button-secondary");
         statsButton.getStyleClass().add("button-secondary");
+        activeBrowseButton = browseAllButton;
+
         browseAllButton.setOnAction(e -> {
+            setBrowseActive(browseAllButton);
             refreshTable(controller.browseAllStudents());
             setActionMessage("当前显示：全部学生。", true);
         });
         browseUnderButton.setOnAction(e -> {
+            setBrowseActive(browseUnderButton);
             refreshTable(controller.browseByType(StudentType.UNDERGRADUATE));
             setActionMessage("当前显示：仅本科生。", true);
         });
         browsePostButton.setOnAction(e -> {
+            setBrowseActive(browsePostButton);
             refreshTable(controller.browseByType(StudentType.POSTGRADUATE));
             setActionMessage("当前显示：仅研究生。", true);
         });
@@ -1044,21 +1125,50 @@ public class MainApp extends Application {
         importButton.setOnAction(e -> importStudentsFromFile());
 
         VBox scoreSection = buildScoreSection();
-        VBox importContent = new VBox(8, scoreSection, form, addHint, new HBox(8, quickAddButton, clearButton));
+        VBox importContent = new VBox(8, scoreSection, form, addHint, new HBox(8, quickAddButton, clearButton, deleteFormButton), generateBatchButton);
         VBox queryContent = new VBox(8, queryRow, queryButtons);
-        VBox utilityContent = new VBox(8, browseButtons, sortRow1, sortRow2, new HBox(8, sortButton, avgButton, importButton, saveButton, aboutButton));
+        VBox browseContent = new VBox(8, browseButtons);
+        VBox sortContent = new VBox(8, sortRow1, sortRow2, new HBox(8, sortButton, avgButton));
+        VBox aboutContent = new VBox(8, importButton, saveButton, aboutButton);
+
+        // 班级管理
+        Button viewClassesButton = new Button("查看班级");
+        viewClassesButton.setMaxWidth(Double.MAX_VALUE);
+        viewClassesButton.getStyleClass().add("button-secondary");
+        viewClassesButton.setOnAction(e -> showClassManagement());
+
+        Button crossCompareButton = new Button("横向对比");
+        crossCompareButton.setMaxWidth(Double.MAX_VALUE);
+        crossCompareButton.getStyleClass().add("button-secondary");
+        crossCompareButton.setOnAction(e -> showCrossComparison());
+
+        Button classInfoButton = new Button("查看当前班级信息");
+        classInfoButton.setMaxWidth(Double.MAX_VALUE);
+        classInfoButton.getStyleClass().add("button-secondary");
+        classInfoButton.setOnAction(e -> showCurrentClassInfo());
+
+        VBox classMgmtContent = new VBox(8, viewClassesButton, crossCompareButton, classInfoButton);
 
         importPane = new TitledPane("学生信息导入", importContent);
         TitledPane queryPane = new TitledPane("查询功能", queryContent);
-        TitledPane utilityPane = new TitledPane("浏览 / 排序 / 关于", utilityContent);
+        TitledPane browsePane = new TitledPane("浏览", browseContent);
+        TitledPane sortPane = new TitledPane("排序", sortContent);
+        TitledPane aboutPane = new TitledPane("关于", aboutContent);
+        TitledPane classMgmtPane = new TitledPane("班级管理", classMgmtContent);
         importPane.setCollapsible(true);
         queryPane.setCollapsible(true);
-        utilityPane.setCollapsible(true);
+        browsePane.setCollapsible(true);
+        sortPane.setCollapsible(true);
+        aboutPane.setCollapsible(true);
+        classMgmtPane.setCollapsible(true);
         importPane.setExpanded(true);
         queryPane.setExpanded(false);
-        utilityPane.setExpanded(false);
+        browsePane.setExpanded(false);
+        sortPane.setExpanded(false);
+        aboutPane.setExpanded(false);
+        classMgmtPane.setExpanded(false);
 
-        Accordion accordion = new Accordion(importPane, queryPane, utilityPane);
+        Accordion accordion = new Accordion(importPane, queryPane, browsePane, sortPane, aboutPane, classMgmtPane);
 
         ScrollPane rightScrollPane = new ScrollPane(accordion);
         rightScrollPane.setFitToWidth(false);
@@ -1088,6 +1198,9 @@ public class MainApp extends Application {
         if (clearButton != null) {
             clearButton.setDisable(false);
         }
+        if (generateBatchButton != null) {
+            generateBatchButton.setDisable(!teacher);
+        }
         if (importButton != null) {
             importButton.setDisable(false);
         }
@@ -1108,6 +1221,20 @@ public class MainApp extends Application {
         supervisorField.setDisable(!teacher);
         directionField.setDisable(!teacher);
         addSubjectRowButton.setDisable(!teacher);
+    }
+
+    private void setBrowseActive(Button active) {
+        if (activeBrowseButton != null && activeBrowseButton != active) {
+            activeBrowseButton.getStyleClass().remove("button-primary");
+            if (!activeBrowseButton.getStyleClass().contains("button-secondary")) {
+                activeBrowseButton.getStyleClass().add("button-secondary");
+            }
+        }
+        active.getStyleClass().remove("button-secondary");
+        if (!active.getStyleClass().contains("button-primary")) {
+            active.getStyleClass().add("button-primary");
+        }
+        activeBrowseButton = active;
     }
 
     private HBox buildStatusBar() {
@@ -1141,7 +1268,9 @@ public class MainApp extends Application {
 
         renderScoreEditor();
 
-        VBox box = new VBox(8, title, scoreSectionTip, scoreRowsBox, addSubjectRowButton);
+        totalScoreLabel.getStyleClass().add("total-score-label");
+
+        VBox box = new VBox(8, title, scoreSectionTip, scoreRowsBox, totalScoreLabel, addSubjectRowButton);
         box.getStyleClass().add("card-pane");
         box.setPadding(new Insets(12));
         return box;
@@ -1185,11 +1314,14 @@ public class MainApp extends Application {
                 scoreLabel.getStyleClass().add("form-label");
                 scoreLabel.setMinWidth(54);
 
-                row.getChildren().addAll(subjectIndex, subjectNameFields.get(i), scoreLabel, scoreValueFields.get(i));
+                TextField sf = scoreValueFields.get(i);
+                sf.textProperty().addListener((obs, oldVal, newVal) -> recalcFormTotalScore());
+                row.getChildren().addAll(subjectIndex, subjectNameFields.get(i), scoreLabel, sf);
                 HBox.setHgrow(subjectNameFields.get(i), Priority.ALWAYS);
-                HBox.setHgrow(scoreValueFields.get(i), Priority.ALWAYS);
+                HBox.setHgrow(sf, Priority.ALWAYS);
                 scoreRowsBox.getChildren().add(row);
             }
+            recalcFormTotalScore();
         } else {
             scoreSectionTip.setText("科目已固定：" + String.join("、", subjectNames));
             addSubjectRowButton.setVisible(false);
@@ -1211,10 +1343,12 @@ public class MainApp extends Application {
 
                 TextField scoreField = scoreValueFields.get(i);
                 scoreField.getStyleClass().add("form-control");
+                scoreField.textProperty().addListener((obs, oldVal, newVal) -> recalcFormTotalScore());
                 row.getChildren().addAll(subjectLabel, scoreField);
                 HBox.setHgrow(scoreField, Priority.ALWAYS);
                 scoreRowsBox.getChildren().add(row);
             }
+            recalcFormTotalScore();
         }
     }
 
@@ -1272,6 +1406,21 @@ public class MainApp extends Application {
         }
     }
 
+    private void recalcFormTotalScore() {
+        double sum = 0.0;
+        for (TextField field : scoreValueFields) {
+            String text = field.getText();
+            if (text != null && !text.trim().isEmpty()) {
+                try {
+                    sum += Double.parseDouble(text.trim());
+                } catch (NumberFormatException ignored) {
+                    // Ignore non-numeric input while typing.
+                }
+            }
+        }
+        totalScoreLabel.setText(String.format(Locale.ROOT, "总分：%.2f", sum));
+    }
+
     private void clearScoreValues() {
         if (subjectNames.isEmpty()) {
             for (TextField field : subjectNameFields) {
@@ -1281,6 +1430,7 @@ public class MainApp extends Application {
         for (TextField field : scoreValueFields) {
             field.clear();
         }
+        recalcFormTotalScore();
     }
 
     private void addRow(GridPane grid, int row, String text, javafx.scene.Node node) {
@@ -1310,10 +1460,15 @@ public class MainApp extends Application {
         ageField.setItems(FXCollections.observableArrayList(ages));
 
         List<String> classes = new ArrayList<>();
-        for (int i = 2501; i <= 2510; i++) {
-            classes.add(String.valueOf(i));
+        for (int i = 1; i <= 4; i++) {
+            classes.add(i + "班");
         }
         classField.setItems(FXCollections.observableArrayList(classes));
+
+        majorField.setEditable(false);
+        majorField.setItems(FXCollections.observableArrayList(
+                "通信工程", "软件工程", "计算机科学与技术", "电子信息工程"
+        ));
 
         provinceField.setItems(FXCollections.observableArrayList(provinceCityMap.keySet()));
         cityField.setItems(FXCollections.observableArrayList());
@@ -1458,11 +1613,21 @@ public class MainApp extends Application {
             setActionMessage(result.getMessage(), false);
             return;
         }
-        refreshTable(result.getStudents());
-        setActionMessage("查询完成，共 " + result.getStudents().size() + " 条结果。", true);
-        if (result.getMessage() != null && !result.getMessage().isEmpty()) {
-            showInfo("查询结果", result.getMessage());
+
+        List<Student> matches = result.getStudents();
+        if (matches.isEmpty()) {
+            table.getSelectionModel().clearSelection();
+            setActionMessage("未找到匹配的学生。", false);
+            showInfo("查询结果", "未找到匹配的学生。");
+            return;
         }
+
+        // 确保数据列表保持当前视图，不清空；只高亮匹配行
+        Student firstMatch = matches.get(0);
+        table.getSelectionModel().select(firstMatch);
+        table.scrollTo(firstMatch);
+        table.requestFocus();
+        setActionMessage("查询完成，共 " + matches.size() + " 条结果，已高亮第一条。", true);
     }
 
     private void doSort() {
@@ -1496,30 +1661,78 @@ public class MainApp extends Application {
             return;
         }
 
-        StringBuilder builder = new StringBuilder();
-        builder.append("统计范围：").append(rangeBox.getValue()).append("\n\n");
+        // 构建统计表格
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("平均分统计");
+        dialog.setHeaderText("统计范围：" + rangeBox.getValue() + "（共 " + source.size() + " 人）");
+        dialog.getDialogPane().setPrefWidth(480);
+        dialog.getDialogPane().setPrefHeight(400);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+
+        TableView<ScoreStatRow> statsTable = new TableView<>();
+        statsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        TableColumn<ScoreStatRow, String> subjectCol = new TableColumn<>("科目");
+        subjectCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().subject));
+        subjectCol.setPrefWidth(200);
+
+        TableColumn<ScoreStatRow, String> avgCol = new TableColumn<>("平均分");
+        avgCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().avgText));
+        avgCol.setPrefWidth(120);
+
+        TableColumn<ScoreStatRow, String> maxCol = new TableColumn<>("最高分");
+        maxCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().maxText));
+        maxCol.setPrefWidth(100);
+
+        statsTable.getColumns().addAll(subjectCol, avgCol, maxCol);
+
+        // 计算各科统计
+        List<ScoreStatRow> rows = new ArrayList<>();
+        double totalAvgSum = 0.0;
+        double totalMaxSum = 0.0;
+
         for (String subject : subjects) {
             double sum = 0.0;
+            double max = 0.0;
             for (Student student : source) {
-                sum += student.getSubjectScore(subject);
+                double score = student.getSubjectScore(subject);
+                sum += score;
+                if (score > max) max = score;
             }
             double avg = sum / source.size();
-            builder.append(subject)
-                    .append(" 平均分：")
-                    .append(String.format(Locale.ROOT, "%.2f", avg))
-                    .append("\n");
+            totalAvgSum += avg;
+            totalMaxSum += max;
+            rows.add(new ScoreStatRow(subject, avg, max));
         }
 
+        // 总分行
         double totalAvg = 0.0;
+        double totalMax = 0.0;
         for (Student student : source) {
-            totalAvg += student.getTotalScore();
+            double ts = student.getTotalScore();
+            totalAvg += ts;
+            if (ts > totalMax) totalMax = ts;
         }
         totalAvg = totalAvg / source.size();
-        builder.append("\n总分平均分：")
-                .append(String.format(Locale.ROOT, "%.2f", totalAvg));
+        rows.add(new ScoreStatRow("【总分】", totalAvg, totalMax));
 
-        showInfo("平均分统计", builder.toString());
+        statsTable.getItems().setAll(rows);
+        dialog.getDialogPane().setContent(statsTable);
+        dialog.showAndWait();
+
         setActionMessage("已完成平均分统计。", true);
+    }
+
+    private static class ScoreStatRow {
+        final String subject;
+        final String avgText;
+        final String maxText;
+
+        ScoreStatRow(String subject, double avg, double max) {
+            this.subject = subject;
+            this.avgText = String.format(Locale.ROOT, "%.2f", avg);
+            this.maxText = String.format(Locale.ROOT, "%.2f", max);
+        }
     }
 
     private List<Student> chooseStudentsByRange(String range) {
@@ -1530,6 +1743,313 @@ public class MainApp extends Application {
             return controller.browseByType(StudentType.POSTGRADUATE);
         }
         return controller.browseAllStudents();
+    }
+
+    private void showClassManagement() {
+        List<Student> all = controller.browseAllStudents();
+        if (all.isEmpty()) {
+            showError("无数据", "当前没有学生数据，请先新增或导入学生。");
+            return;
+        }
+
+        // 收集所有专业 + 类型
+        Map<String, Map<String, Integer>> majorClassCount = new LinkedHashMap<>();
+        Map<String, Integer> postgradClassCount = new LinkedHashMap<>();
+
+        for (Student s : all) {
+            if (s instanceof Undergraduate) {
+                Undergraduate u = (Undergraduate) s;
+                majorClassCount.computeIfAbsent(u.getMajor(), k -> new LinkedHashMap<>())
+                        .merge(s.getClassName(), 1, Integer::sum);
+            } else if (s instanceof Postgraduate) {
+                postgradClassCount.merge(s.getClassName(), 1, Integer::sum);
+            }
+        }
+
+        List<String> filterOptions = new ArrayList<>();
+        filterOptions.add("全部");
+        filterOptions.addAll(majorClassCount.keySet());
+        if (!postgradClassCount.isEmpty()) {
+            filterOptions.add("研究生");
+        }
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("班级管理");
+        dialog.setHeaderText("查看班级");
+        dialog.getDialogPane().setPrefWidth(500);
+        dialog.getDialogPane().setPrefHeight(400);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+
+        ComboBox<String> filterCombo = new ComboBox<>();
+        filterCombo.setItems(FXCollections.observableArrayList(filterOptions));
+        filterCombo.getSelectionModel().selectFirst();
+        filterCombo.setMaxWidth(Double.MAX_VALUE);
+        filterCombo.getStyleClass().add("form-control");
+
+        TableView<ClassRow> classTable = new TableView<>();
+        classTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        TableColumn<ClassRow, String> majorCol = new TableColumn<>("专业/类型");
+        majorCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().major));
+        majorCol.setPrefWidth(160);
+
+        TableColumn<ClassRow, String> classCol = new TableColumn<>("班级");
+        classCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().className));
+        classCol.setPrefWidth(200);
+
+        TableColumn<ClassRow, String> countCol = new TableColumn<>("人数");
+        countCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().count));
+        countCol.setPrefWidth(80);
+
+        classTable.getColumns().addAll(majorCol, classCol, countCol);
+
+        Runnable refreshClassTable = () -> {
+            String filter = filterCombo.getValue();
+            List<ClassRow> rows = new ArrayList<>();
+
+            if (filter == null || "全部".equals(filter)) {
+                for (Map.Entry<String, Map<String, Integer>> majorEntry : majorClassCount.entrySet()) {
+                    for (Map.Entry<String, Integer> cls : majorEntry.getValue().entrySet()) {
+                        rows.add(new ClassRow(majorEntry.getKey(), cls.getKey(), cls.getValue()));
+                    }
+                }
+                for (Map.Entry<String, Integer> cls : postgradClassCount.entrySet()) {
+                    rows.add(new ClassRow("研究生", cls.getKey(), cls.getValue()));
+                }
+            } else if ("研究生".equals(filter)) {
+                for (Map.Entry<String, Integer> cls : postgradClassCount.entrySet()) {
+                    rows.add(new ClassRow("研究生", cls.getKey(), cls.getValue()));
+                }
+            } else {
+                Map<String, Integer> classes = majorClassCount.get(filter);
+                if (classes != null) {
+                    for (Map.Entry<String, Integer> cls : classes.entrySet()) {
+                        rows.add(new ClassRow(filter, cls.getKey(), cls.getValue()));
+                    }
+                }
+            }
+            classTable.getItems().setAll(rows);
+        };
+
+        filterCombo.setOnAction(e -> refreshClassTable.run());
+
+        // 双击班级行 → 筛选主表格仅显示该班级学生
+        final String[] selectedClass = {null};
+        classTable.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                ClassRow row = classTable.getSelectionModel().getSelectedItem();
+                if (row != null) {
+                    selectedClass[0] = row.className;
+                    dialog.close();
+                }
+            }
+        });
+
+        VBox content = new VBox(10, new Label("筛选专业："), filterCombo, classTable);
+        content.setPadding(new Insets(10));
+        VBox.setVgrow(classTable, Priority.ALWAYS);
+
+        dialog.getDialogPane().setContent(content);
+        refreshClassTable.run();
+        dialog.showAndWait();
+
+        if (selectedClass[0] != null) {
+            String cn = selectedClass[0];
+            List<Student> filtered = controller.browseAllStudents().stream()
+                    .filter(s -> s.getClassName().equals(cn))
+                    .collect(java.util.stream.Collectors.toList());
+            refreshTable(filtered);
+            supervisorField.clear();
+            directionField.clear();
+            setActionMessage("已筛选班级：" + cn + "（" + filtered.size() + "人）", true);
+        } else {
+            setActionMessage("已展示班级列表。", true);
+        }
+    }
+
+    private static class ClassRow {
+        final String major;
+        final String className;
+        final String count;
+
+        ClassRow(String major, String className, int count) {
+            this.major = major;
+            this.className = className;
+            this.count = String.valueOf(count);
+        }
+    }
+
+    private void showCrossComparison() {
+        List<Student> all = controller.browseAllStudents();
+        if (all.isEmpty()) {
+            showError("无数据", "当前没有学生数据。");
+            return;
+        }
+        if (subjectNames.isEmpty()) {
+            showError("无科目", "请先确定科目列表。");
+            return;
+        }
+
+        // 收集所有本科专业
+        Set<String> majorSet = new LinkedHashSet<>();
+        for (Student s : all) {
+            if (s instanceof Undergraduate) {
+                String m = ((Undergraduate) s).getMajor();
+                if (m != null && !m.isEmpty()) {
+                    majorSet.add(m);
+                }
+            }
+        }
+        if (majorSet.isEmpty()) {
+            showError("无数据", "当前没有本科生数据，无法横向对比。");
+            return;
+        }
+
+        // 弹出选择专业的对话框
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("横向对比");
+        dialog.setHeaderText("请选择要对比的专业");
+        dialog.getDialogPane().getStyleClass().add("teacher-login-dialog");
+        dialog.getDialogPane().setPrefWidth(450);
+
+        ComboBox<String> majorCombo = new ComboBox<>();
+        majorCombo.setItems(FXCollections.observableArrayList(majorSet));
+        majorCombo.getSelectionModel().selectFirst();
+        majorCombo.setMaxWidth(Double.MAX_VALUE);
+        majorCombo.getStyleClass().add("form-control");
+
+        VBox content = new VBox(12, new Label("选择专业："), majorCombo);
+        content.setPadding(new Insets(10));
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        Optional<ButtonType> btnResult = dialog.showAndWait();
+        if (btnResult.isEmpty() || btnResult.get() != ButtonType.OK) {
+            return;
+        }
+        String selectedMajor = majorCombo.getValue();
+        if (selectedMajor == null || selectedMajor.isEmpty()) {
+            return;
+        }
+        // 按班级分组，计算每班各科平均分
+        Map<String, List<Undergraduate>> classGroups = new LinkedHashMap<>();
+        for (Student s : all) {
+            if (s instanceof Undergraduate) {
+                Undergraduate u = (Undergraduate) s;
+                if (selectedMajor.equals(u.getMajor())) {
+                    classGroups.computeIfAbsent(u.getClassName(), k -> new ArrayList<>()).add(u);
+                }
+            }
+        }
+
+        if (classGroups.isEmpty()) {
+            showError("无数据", "专业「" + selectedMajor + "」下没有班级数据。");
+            return;
+        }
+
+        // 总分柱状图（按总分从高到低排序）
+        javafx.scene.chart.CategoryAxis xAxis = new javafx.scene.chart.CategoryAxis();
+        xAxis.setLabel("班级");
+        xAxis.setTickLabelRotation(0);
+        xAxis.setTickLabelGap(4);
+        xAxis.setTickLabelFont(javafx.scene.text.Font.font(11));
+        javafx.scene.chart.NumberAxis yAxis = new javafx.scene.chart.NumberAxis();
+        yAxis.setLabel("总分平均分");
+        javafx.scene.chart.BarChart<String, Number> barChart = new javafx.scene.chart.BarChart<>(xAxis, yAxis);
+        barChart.setTitle("专业「" + selectedMajor + "」各班总分平均分对比");
+        barChart.setLegendVisible(false);
+        barChart.setAnimated(false);
+        barChart.setBarGap(4);
+        barChart.setCategoryGap(20);
+
+        // 计算每班总分并排序（从高到低）
+        List<Map.Entry<String, List<Undergraduate>>> sortedClasses = new ArrayList<>(classGroups.entrySet());
+        sortedClasses.sort((a, b) -> {
+            double avgA = a.getValue().stream().mapToDouble(Student::getTotalScore).average().orElse(0);
+            double avgB = b.getValue().stream().mapToDouble(Student::getTotalScore).average().orElse(0);
+            return Double.compare(avgB, avgA);
+        });
+
+        javafx.scene.chart.XYChart.Series<String, Number> series = new javafx.scene.chart.XYChart.Series<>();
+        for (Map.Entry<String, List<Undergraduate>> entry : sortedClasses) {
+            String className = entry.getKey();
+            List<Undergraduate> students = entry.getValue();
+            double totalSum = 0.0;
+            for (Undergraduate u : students) {
+                totalSum += u.getTotalScore();
+            }
+            double avgTotal = totalSum / students.size();
+            series.getData().add(new javafx.scene.chart.XYChart.Data<>(className, avgTotal));
+        }
+        barChart.getData().add(series);
+
+        Stage chartStage = new Stage();
+        chartStage.setTitle("横向对比柱状图 - " + selectedMajor);
+        Scene chartScene = new Scene(barChart, 900, 500);
+        String stylesheet = resolveStyleSheet();
+        if (stylesheet != null) {
+            chartScene.getStylesheets().add(stylesheet);
+        }
+        chartStage.setScene(chartScene);
+        setWindowIcon(chartStage);
+
+        // 强制所有 X 轴标签水平排列（JavaFX 在空间不足时会自动旋转标签，需在渲染后重置）
+        chartStage.setOnShown(e -> {
+            for (Node node : xAxis.lookupAll(".tick-label")) {
+                node.setRotate(0);
+                node.setStyle("-fx-rotate: 0;");
+            }
+        });
+        chartStage.show();
+
+        setActionMessage("已完成专业「" + selectedMajor + "」的横向对比（含柱状图）。", true);
+    }
+
+    private void showCurrentClassInfo() {
+        Student selected = table.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showError("未选择", "请先在数据列表中选中一名学生。");
+            return;
+        }
+        String className = selected.getClassName();
+        List<Student> all = controller.browseAllStudents();
+        List<Student> classMembers = all.stream()
+                .filter(s -> s.getClassName().equals(className))
+                .collect(java.util.stream.Collectors.toList());
+
+        if (classMembers.isEmpty()) {
+            showError("无数据", "未找到班级「" + className + "」的学生。");
+            return;
+        }
+
+        // 构建信息文本
+        StringBuilder sb = new StringBuilder();
+        sb.append("班级：").append(className).append("\n");
+        sb.append("人数：").append(classMembers.size()).append("人\n\n");
+
+        if (!subjectNames.isEmpty()) {
+            sb.append(String.format("%-10s %8s %8s\n", "科目", "平均分", "最高分"));
+            sb.append("----------------------------\n");
+            for (String subject : subjectNames) {
+                double sum = 0.0;
+                double max = Double.MIN_VALUE;
+                for (Student s : classMembers) {
+                    double score = s.getSubjectScore(subject);
+                    sum += score;
+                    if (score > max) max = score;
+                }
+                double avg = sum / classMembers.size();
+                sb.append(String.format(Locale.ROOT, "%-10s %8.2f %8.2f\n", subject, avg, max));
+            }
+
+            double totalAvg = classMembers.stream()
+                    .mapToDouble(Student::getTotalScore).average().orElse(0);
+            sb.append("----------------------------\n");
+            sb.append(String.format(Locale.ROOT, "总分平均：%.2f\n", totalAvg));
+        }
+
+        showInfo("班级信息 - " + className, sb.toString());
+        setActionMessage("已展示班级「" + className + "」的信息。", true);
     }
 
     private FormData readFormData(boolean forUpdate) {
@@ -1556,7 +2076,8 @@ public class MainApp extends Application {
         data.subjectsToInitialize = scoreInput.initialSubjects;
 
         if (data.type == StudentType.UNDERGRADUATE) {
-            data.major = mustNotBlank(majorField.getText(), "本科生专业不能为空。");
+            data.major = mustNotBlank(majorField.getValue(), "本科生专业不能为空。");
+            data.className = data.major + data.className;
         } else {
             data.supervisor = mustNotBlank(supervisorField.getText(), "研究生导师不能为空。");
             data.direction = mustNotBlank(directionField.getText(), "研究方向不能为空。");
@@ -1620,6 +2141,20 @@ public class MainApp extends Application {
         ensureComboItem(classField, student.getClassName());
         classField.setValue(student.getClassName());
 
+        // 解析本科生班级名（如"软件工程1班"→ 专业="软件工程"，班级="1班"）
+        String className = student.getClassName();
+        if (student instanceof Undergraduate) {
+            String[] undergradMajors = {"通信工程", "软件工程", "计算机科学与技术", "电子信息工程"};
+            for (String m : undergradMajors) {
+                if (className.startsWith(m)) {
+                    String suffix = className.substring(m.length());
+                    ensureComboItem(classField, suffix);
+                    classField.setValue(suffix);
+                    break;
+                }
+            }
+        }
+
         Address address = student.getAddress();
         ensureComboItem(provinceField, address.getProvince());
         provinceField.setValue(address.getProvince());
@@ -1632,14 +2167,14 @@ public class MainApp extends Application {
         fillScores(student);
 
         if (student instanceof Undergraduate) {
-            majorField.setText(((Undergraduate) student).getMajor());
+            majorField.setValue(((Undergraduate) student).getMajor());
             supervisorField.clear();
             directionField.clear();
             profileLabel.setText("专业信息：本科生 - " + ((Undergraduate) student).getMajor());
         } else if (student instanceof Postgraduate) {
             supervisorField.setText(((Postgraduate) student).getSupervisor());
             directionField.setText(((Postgraduate) student).getResearchDirection());
-            majorField.clear();
+            majorField.setValue(null);
             profileLabel.setText("专业信息：研究生 - 导师=" + ((Postgraduate) student).getSupervisor() + "，方向=" + ((Postgraduate) student).getResearchDirection());
         }
     }
@@ -1661,7 +2196,7 @@ public class MainApp extends Application {
         streetField.clear();
         houseNoField.clear();
 
-        majorField.clear();
+        majorField.setValue(null);
         supervisorField.clear();
         directionField.clear();
 
@@ -1670,6 +2205,154 @@ public class MainApp extends Application {
         idField.requestFocus();
         profileLabel.setText("专业信息：未选择学生");
         setActionMessage("表单已清空，请从学号开始录入。", true);
+    }
+
+    private void generateBatchStudents() {
+        if (subjectNames.isEmpty()) {
+            showError("无法生成", "请先手动新增一名学生以确定科目列表，再使用批量生成。");
+            return;
+        }
+        if (service.isFull()) {
+            showError("无法生成", "存储已满（" + service.getCurrentSize() + "/" + service.getCapacity() + "），无法继续生成。");
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("批量生成学生");
+        confirm.setHeaderText("将批量生成300名学生");
+        confirm.setContentText("本科生：4个专业 × 3个班 × 20人 = 240人\n研究生：60人\n随机中文名、随机中国地址、随机成绩。\n是否继续？");
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isEmpty() || result.get() != ButtonType.OK) {
+            setActionMessage("已取消批量生成。", true);
+            return;
+        }
+
+        java.util.Random random = new java.util.Random(42);
+
+        String[] surnames = {
+            "赵", "钱", "孙", "李", "周", "吴", "郑", "王", "冯", "陈", "褚", "卫", "蒋", "沈", "韩", "杨",
+            "朱", "秦", "尤", "许", "何", "吕", "施", "张", "孔", "曹", "严", "华", "金", "魏", "陶", "姜",
+            "戚", "谢", "邹", "喻", "柏", "水", "窦", "章", "云", "苏", "潘", "葛", "奚", "范", "彭", "郎",
+            "鲁", "韦", "昌", "马", "苗", "凤", "花", "方", "俞", "任", "袁", "柳", "酆", "鲍", "史", "唐",
+            "费", "廉", "岑", "薛", "雷", "贺", "倪", "汤", "滕", "殷", "罗", "毕", "郝", "邬", "安", "常",
+            "乐", "于", "时", "傅", "皮", "卞", "齐", "康", "伍", "余", "元", "卜", "顾", "孟", "平", "黄",
+            "和", "穆", "萧", "尹", "姚", "邵", "湛", "汪", "祁", "毛", "禹", "狄", "米", "贝", "明", "臧"
+        };
+        String[] givenNameChars = {
+            "伟", "芳", "娜", "敏", "静", "丽", "强", "磊", "洋", "勇", "艳", "杰", "涛", "明", "超", "秀",
+            "英", "华", "慧", "建", "文", "军", "斌", "婷", "洁", "峰", "玉", "兰", "萍", "飞", "玲", "鑫",
+            "平", "桂", "芬", "燕", "霞", "鹏", "浩", "然", "博", "辉", "林", "宇", "志", "国", "家", "瑞",
+            "雪", "梅", "春", "秋", "晨", "曦", "雨", "琪", "宁", "安", "思", "怡", "欣", "瑶", "梦", "丹"
+        };
+        String[] streets = {
+            "中山路", "人民路", "建设路", "解放路", "长安街", "南京路", "北京路", "和平路",
+            "文化路", "科技路", "学府路", "朝阳路", "东风路", "花园路", "幸福路", "光明路"
+        };
+        String[] majors = {
+            "通信工程", "软件工程", "计算机科学与技术", "电子信息工程"
+        };
+        String[] directions = {
+            "机器学习", "数据挖掘", "自然语言处理", "计算机视觉", "网络安全",
+            "分布式系统", "云计算", "区块链", "人机交互", "嵌入式系统"
+        };
+        String[] supervisorSurnames = {
+            "张", "李", "王", "刘", "陈", "杨", "赵", "黄", "周", "吴", "徐", "孙",
+            "胡", "朱", "高", "林", "何", "郭", "马", "罗"
+        };
+
+        List<String> provinceList = new ArrayList<>(provinceCityMap.keySet());
+
+        int totalGenerate = 300;
+        int added = 0;
+        int failed = 0;
+        int remaining = service.getCapacity() - service.getCurrentSize();
+        int actualGenerate = Math.min(totalGenerate, remaining);
+
+        // 本科生：4专业 × 3班 × 20人 = 240人
+        int undergradPerClass = 20;
+        int classesPerMajor = 3;
+        int undergradTotal = majors.length * classesPerMajor * undergradPerClass; // 240
+        // 研究生：3班 × 20人 = 60人
+        int postgradPerClass = 20;
+        int postgradClasses = 3;
+        int postgradTotal = postgradClasses * postgradPerClass; // 60
+
+        for (int i = 0; i < actualGenerate; i++) {
+            String surname = surnames[random.nextInt(surnames.length)];
+            String given;
+            if (random.nextBoolean()) {
+                given = givenNameChars[random.nextInt(givenNameChars.length)];
+            } else {
+                given = givenNameChars[random.nextInt(givenNameChars.length)]
+                        + givenNameChars[random.nextInt(givenNameChars.length)];
+            }
+            String name = surname + given;
+
+            String province = provinceList.get(random.nextInt(provinceList.size()));
+            List<String> cities = provinceCityMap.get(province);
+            String city = cities.get(random.nextInt(cities.size()));
+            String street = streets[random.nextInt(streets.length)];
+            String houseNo = (random.nextInt(200) + 1) + "号";
+            Address address = new Address(province, city, street, houseNo);
+
+            String studentId = String.format("2025%04d", i + 1);
+
+            LinkedHashMap<String, Double> scores = new LinkedHashMap<>();
+            for (String subject : subjectNames) {
+                scores.put(subject, 40.0 + random.nextDouble() * 60.0);
+            }
+
+            if (i < undergradTotal) {
+                int majorIdx = (i / (classesPerMajor * undergradPerClass)) % majors.length;
+                int classNum = ((i / undergradPerClass) % classesPerMajor) + 1;
+                String major = majors[majorIdx];
+                String className = major + classNum + "班";
+                int age = random.nextInt(6) + 18; // 18-23
+                Undergraduate stu = new Undergraduate(studentId, name, age, className, major, address, scores);
+                if (service.addStudent(stu)) {
+                    added++;
+                } else {
+                    failed++;
+                    rollbackCounters(stu);
+                }
+            } else {
+                int postIdx = i - undergradTotal;
+                int classNum = (postIdx / postgradPerClass) % postgradClasses + 1;
+                String className = "计算机研" + classNum + "班";
+                int age = random.nextInt(9) + 22; // 22-30
+                String supervisor = supervisorSurnames[random.nextInt(supervisorSurnames.length)] + "教授";
+                String direction = directions[random.nextInt(directions.length)];
+                Postgraduate stu = new Postgraduate(studentId, name, age, className, supervisor, direction, address, scores);
+                if (service.addStudent(stu)) {
+                    added++;
+                } else {
+                    failed++;
+                    rollbackCounters(stu);
+                }
+            }
+        }
+
+        refreshTable(controller.browseAllStudents());
+        updateStatus();
+        setUnsavedChanges(true);
+        renderScoreEditor();
+        rebuildTableColumns();
+
+        String msg = String.format(
+                "批量生成完成。\n成功：%d 人\n失败：%d 人\n当前学生总数：%d",
+                added, failed, service.getTotalCount()
+        );
+        setActionMessage(msg, added > 0);
+        showInfo("批量生成结果", msg);
+    }
+
+    private void rollbackCounters(Student student) {
+        Student.decreaseTotalCount();
+        if (student instanceof Undergraduate) {
+            Undergraduate.decreaseCount();
+        } else if (student instanceof Postgraduate) {
+            Postgraduate.decreaseCount();
+        }
     }
 
     private void clearFormAndAllStudents() {
@@ -2163,15 +2846,11 @@ public class MainApp extends Application {
                                                                Integer majorCol,
                                                                Integer ageCol) {
         LinkedHashMap<String, Integer> columns = new LinkedHashMap<>();
-        Integer totalCol = findColumn(index, "总分", "总成绩", "总成绩分", "score", "成绩", "分数");
-        if (totalCol != null) {
-            columns.put(fallbackIfBlank(getCell(headers, totalCol), "总分"), totalCol);
-        }
 
         List<String> detected = detectSubjectHeaders(headers);
         for (String subject : detected) {
             Integer pos = index.get(subject);
-            if (pos != null && !columns.containsValue(pos)) {
+            if (pos != null) {
                 double ratio = columnNumericRatio(rows, dataStartRow, pos);
                 String normalizedHeader = normalizeHeader(subject);
                 if (isScoreLikeHeader(normalizedHeader) || ratio >= 0.80) {
@@ -2180,7 +2859,14 @@ public class MainApp extends Application {
             }
         }
 
+        // 如果已有其他科目成绩列，则忽略"总分"列，因为getTotalScore()会自动计算。
+        // 仅当没有其他科目列时，才把"总分"作为唯一成绩列保留。
         if (columns.isEmpty()) {
+            Integer totalCol = findColumn(index, "总分", "总成绩", "总成绩分", "score", "成绩", "分数");
+            if (totalCol != null) {
+                columns.put(fallbackIfBlank(getCell(headers, totalCol), "总分"), totalCol);
+            }
+
             Set<Integer> exclude = new HashSet<>();
             exclude.add(idCol);
             exclude.add(nameCol);

@@ -11,54 +11,77 @@
 }
 
 .launch-root {
-    -fx-background-color: #10213a;
+    -fx-background-color: #0d1b2a;
 }
 
 .launch-card {
-    -fx-background-color: rgba(16, 33, 58, 0.36);
-    -fx-background-radius: 24px;
-    -fx-border-color: rgba(255, 255, 255, 0.24);
-    -fx-border-radius: 24px;
-    -fx-padding: 32px 40px;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 24, 0, 0, 8);
+    -fx-background-color: rgba(255, 255, 255, 0.06);
+    -fx-background-radius: 20px;
+    -fx-border-color: rgba(255, 255, 255, 0.12);
+    -fx-border-radius: 20px;
+    -fx-border-width: 1px;
+    -fx-padding: 40px 48px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 30, 0, 0, 12);
 }
 
 .launch-avatar {
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.34), 18, 0, 0, 4);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.40), 20, 0, 0, 6);
 }
 
 .launch-title {
-    -fx-font-family: "SimSun", "宋体";
-    -fx-font-size: 38px;
+    -fx-font-family: "Microsoft YaHei", "SimHei", sans-serif;
+    -fx-font-size: 32px;
     -fx-font-weight: bold;
     -fx-text-fill: white;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 6, 0, 0, 1);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.50), 8, 0, 0, 2);
 }
 
-.launch-hint {
-    -fx-font-size: 14px;
-    -fx-text-fill: rgba(255, 255, 255, 0.88);
-    -fx-alignment: center;
-    -fx-text-alignment: center;
-    -fx-max-width: 360px;
+.launch-subtitle {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-size: 11px;
+    -fx-font-weight: normal;
+    -fx-text-fill: rgba(255, 255, 255, 0.45);
+    -fx-letter-spacing: 4px;
+}
+
+.launch-divider {
+    -fx-background-color: rgba(255, 255, 255, 0.20);
+    -fx-min-height: 1.5px;
+    -fx-pref-height: 1.5px;
+}
+
+.launch-version {
+    -fx-font-size: 11px;
+    -fx-text-fill: rgba(255, 255, 255, 0.30);
+    -fx-padding: 4px 0 0 0;
 }
 
 .launch-enter-button {
-    -fx-min-width: 180px;
-    -fx-pref-width: 180px;
-    -fx-pref-height: 44px;
-    -fx-padding: 0 26px;
+    -fx-min-width: 170px;
+    -fx-pref-width: 170px;
+    -fx-pref-height: 46px;
+    -fx-padding: 0 28px;
     -fx-font-size: 15px;
+    -fx-font-weight: bold;
     -fx-background-radius: 999px;
+    -fx-cursor: hand;
 }
 
 .launch-student-button {
-    -fx-background-color: rgba(242, 243, 245, 0.92);
-    -fx-text-fill: #2c3e50;
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-text-fill: white;
+    -fx-border-color: rgba(255, 255, 255, 0.30);
+    -fx-border-width: 1px;
+    -fx-border-radius: 999px;
 }
 
 .launch-student-button:hover {
-    -fx-background-color: rgba(230, 232, 236, 0.98);
+    -fx-background-color: rgba(255, 255, 255, 0.25);
+    -fx-border-color: rgba(255, 255, 255, 0.50);
+}
+
+.launch-student-button:pressed {
+    -fx-background-color: rgba(255, 255, 255, 0.35);
 }
 
 .launch-teacher-button {
@@ -67,7 +90,12 @@
 }
 
 .launch-teacher-button:hover {
-    -fx-background-color: #00a026;
+    -fx-background-color: #00c935;
+    -fx-effect: dropshadow(gaussian, rgba(0,180,42,0.40), 10, 0, 0, 0);
+}
+
+.launch-teacher-button:pressed {
+    -fx-background-color: #009a23;
 }
 
 .main-scroll-pane,
@@ -109,6 +137,13 @@
 .status-text {
     -fx-font-size: 12px;
     -fx-text-fill: #86909c;
+}
+
+.total-score-label {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #165dff;
+    -fx-padding: 6px 0 0 0;
 }
 
 /* 卡片 */
@@ -285,6 +320,21 @@
     -fx-background-color: #008c22;
 }
 
+.button-danger {
+    -fx-background-color: #e74c3c;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 20px;
+}
+
+.button-danger:hover {
+    -fx-background-color: #c0392b;
+}
+
+.button-danger:pressed {
+    -fx-background-color: #a93226;
+}
+
 .quick-save-button {
     -fx-font-size: 13px;
     -fx-padding: 8px 14px;
@@ -425,4 +475,43 @@
 .drop-overlay-subtitle {
     -fx-text-fill: #4e5969;
     -fx-font-size: 13px;
+}
+
+/* 老师端登录对话框 */
+.teacher-login-dialog {
+    -fx-background-color: #f8f9fb;
+}
+
+.login-avatar {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 12, 0, 0, 2);
+}
+
+.login-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1d2129;
+    -fx-padding: 0 0 6px 0;
+}
+
+.login-field {
+    -fx-pref-height: 38px;
+    -fx-font-size: 14px;
+    -fx-background-radius: 8px;
+    -fx-border-color: #e5e6eb;
+    -fx-border-radius: 8px;
+    -fx-background-color: white;
+    -fx-padding: 0 12px;
+}
+
+.login-field:focused {
+    -fx-border-color: #165dff;
+}
+
+/* 柱状图 X 轴标签强制水平排列 */
+.chart .axis {
+    -fx-tick-label-font-size: 12px;
+}
+
+.chart .axis .tick-label {
+    -fx-rotate: 0;
 }
